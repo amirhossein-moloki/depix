@@ -20,9 +20,19 @@ using Modules.Support.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Preload module infrastructure assemblies into AppDomain for EF Core configuration scanning
+_ = Modules.Identity.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.CRM.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.Sales.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.Customer.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.Project.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.Finance.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.Support.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.Platform.Infrastructure.AssemblyReference.Assembly;
+
 // Add Building Blocks
 builder.Services.AddBuildingBlocksCommon();
-builder.Services.AddBuildingBlocksInfrastructure();
+builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration);
 
 // Add Application Modules
 builder.Services.AddIdentityApi(builder.Configuration);
