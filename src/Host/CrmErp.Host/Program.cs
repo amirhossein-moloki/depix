@@ -1,4 +1,5 @@
 using BuildingBlocks.Common;
+using BuildingBlocks.Common.Extensions;
 using BuildingBlocks.Infrastructure;
 using Modules.CRM.API;
 using Modules.CRM.Infrastructure;
@@ -53,6 +54,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseUnifiedExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {
