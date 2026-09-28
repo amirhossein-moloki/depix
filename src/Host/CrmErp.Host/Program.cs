@@ -1,8 +1,11 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using BuildingBlocks.Common;
 using BuildingBlocks.Common.Extensions;
 using BuildingBlocks.Infrastructure;
+using BuildingBlocks.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Modules.CRM.API;
 using Modules.CRM.Infrastructure;
@@ -37,10 +40,27 @@ _ = Modules.Platform.Infrastructure.AssemblyReference.Assembly;
 builder.Services.AddBuildingBlocksCommon();
 builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration);
 
+// Add Database Health Check
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ApplicationDbContext>();
+
+// Configure Rate Limiting Foundation
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("fixed", opt =>
+    {
+        opt.PermitLimit = 100;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        opt.QueueLimit = 10;
+    });
+});
+
 // Configure JWT Authentication
-var jwtSecret = builder.Configuration["Jwt:Secret"] ?? "SuperSecretKeyForJwtTokenGeneration_MustBeAtLeast256BitsLong!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "CrmErpApi";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "CrmErpClients";
+var jwtSecret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret must be configured in application settings.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer must be configured in application settings.");
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience must be configured in application settings.");
 
 builder.Services.AddAuthentication(options =>
 {
@@ -92,6 +112,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+app.UseCorrelationId();
 app.UseUnifiedExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -102,10 +123,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHealthChecks("/health");
 
 app.MapGet("/", () => Results.Ok(new
 {
