@@ -12,8 +12,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.Name)
-            .HasMaxLength(200)
+        builder.Property(u => u.FirstName)
+            .HasMaxLength(100)
+            .IsRequired();
+
+        builder.Property(u => u.LastName)
+            .HasMaxLength(100)
             .IsRequired();
 
         builder.Property(u => u.Email)
@@ -23,11 +27,17 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasIndex(u => u.Email)
             .IsUnique();
 
+        builder.Property(u => u.Phone)
+            .HasMaxLength(50);
+
         builder.Property(u => u.PasswordHash)
             .IsRequired();
 
-        builder.Property(u => u.IsActive)
+        builder.Property(u => u.Status)
+            .HasConversion<int>()
             .IsRequired();
+
+        builder.Property(u => u.LastLoginAt);
 
         builder.Property(u => u.CreatedAt)
             .IsRequired();
@@ -37,6 +47,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(u => u.UserRoles)
             .WithOne()
             .HasForeignKey(ur => ur.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(u => u.RefreshTokens)
+            .WithOne()
+            .HasForeignKey(rt => rt.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

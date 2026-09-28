@@ -126,5 +126,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CrmErp.ArchitectureTests/CrmErp.ArchitectureTests.csproj" />
+    <Project Path="tests/Modules.Identity.Tests/Modules.Identity.Tests.csproj" />
   </Folder>
 </Solution>

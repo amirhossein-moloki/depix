@@ -2,42 +2,71 @@ using BuildingBlocks.Domain.Models;
 
 namespace Modules.Identity.Domain.Entities;
 
+public enum UserStatus
+{
+    Active = 1,
+    Inactive = 2,
+    LockedOut = 3
+}
+
 public class User : AuditableAggregateRoot
 {
     private readonly List<UserRole> _userRoles = new();
+    private readonly List<RefreshToken> _refreshTokens = new();
 
-    public string Name { get; private set; } = string.Empty;
+    public string FirstName { get; private set; } = string.Empty;
+    public string LastName { get; private set; } = string.Empty;
     public string Email { get; private set; } = string.Empty;
+    public string? Phone { get; private set; }
     public string PasswordHash { get; private set; } = string.Empty;
-    public bool IsActive { get; private set; } = true;
+    public UserStatus Status { get; private set; } = UserStatus.Active;
+    public DateTime? LastLoginAt { get; private set; }
 
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
+    public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
 
     private User() { }
 
-    public User(Guid id, string name, string email, string passwordHash, bool isActive = true) : base(id)
+    public User(Guid id, string firstName, string lastName, string email, string passwordHash, string? phone = null, UserStatus status = UserStatus.Active)
+        : base(id)
     {
-        Name = name;
+        FirstName = firstName;
+        LastName = lastName;
         Email = email;
         PasswordHash = passwordHash;
-        IsActive = isActive;
+        Phone = phone;
+        Status = status;
     }
 
-    public static User Create(string name, string email, string passwordHash)
+    public static User Create(string firstName, string lastName, string email, string passwordHash, string? phone = null)
     {
-        return new User(Guid.NewGuid(), name, email, passwordHash, true);
+        return new User(Guid.NewGuid(), firstName, lastName, email, passwordHash, phone, UserStatus.Active);
     }
 
-    public void UpdateProfile(string name, string email)
+    public void UpdateProfile(string firstName, string lastName, string email, string? phone = null)
     {
-        Name = name;
+        FirstName = firstName;
+        LastName = lastName;
         Email = email;
+        Phone = phone;
         UpdateTimestamp(DateTime.UtcNow);
     }
 
-    public void SetActive(bool isActive)
+    public void SetStatus(UserStatus status)
     {
-        IsActive = isActive;
+        Status = status;
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void RecordLogin()
+    {
+        LastLoginAt = DateTime.UtcNow;
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void UpdatePassword(string passwordHash)
+    {
+        PasswordHash = passwordHash;
         UpdateTimestamp(DateTime.UtcNow);
     }
 
@@ -54,5 +83,16 @@ public class User : AuditableAggregateRoot
     {
         _userRoles.RemoveAll(ur => ur.RoleId == roleId);
         UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void AddRefreshToken(RefreshToken token)
+    {
+        _refreshTokens.Add(token);
+    }
+
+    public void RevokeRefreshToken(string tokenHash)
+    {
+        var token = _refreshTokens.FirstOrDefault(rt => rt.TokenHash == tokenHash);
+        token?.Revoke();
     }
 }
