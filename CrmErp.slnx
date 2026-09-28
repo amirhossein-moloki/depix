@@ -1,0 +1,130 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/BuildingBlocks/" />
+  <Folder Name="/src/BuildingBlocks/Application/">
+    <Project Path="src/BuildingBlocks/Application/BuildingBlocks.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Common/">
+    <Project Path="src/BuildingBlocks/Common/BuildingBlocks.Common.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Domain/">
+    <Project Path="src/BuildingBlocks/Domain/BuildingBlocks.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Infrastructure/">
+    <Project Path="src/BuildingBlocks/Infrastructure/BuildingBlocks.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/SharedKernel/">
+    <Project Path="src/BuildingBlocks/SharedKernel/BuildingBlocks.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/CrmErp.Host/CrmErp.Host.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/CRM/" />
+  <Folder Name="/src/Modules/CRM/API/">
+    <Project Path="src/Modules/CRM/API/Modules.CRM.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/CRM/Application/">
+    <Project Path="src/Modules/CRM/Application/Modules.CRM.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/CRM/Domain/">
+    <Project Path="src/Modules/CRM/Domain/Modules.CRM.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/CRM/Infrastructure/">
+    <Project Path="src/Modules/CRM/Infrastructure/Modules.CRM.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Customer/" />
+  <Folder Name="/src/Modules/Customer/API/">
+    <Project Path="src/Modules/Customer/API/Modules.Customer.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Customer/Application/">
+    <Project Path="src/Modules/Customer/Application/Modules.Customer.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Customer/Domain/">
+    <Project Path="src/Modules/Customer/Domain/Modules.Customer.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Customer/Infrastructure/">
+    <Project Path="src/Modules/Customer/Infrastructure/Modules.Customer.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Finance/" />
+  <Folder Name="/src/Modules/Finance/API/">
+    <Project Path="src/Modules/Finance/API/Modules.Finance.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Finance/Application/">
+    <Project Path="src/Modules/Finance/Application/Modules.Finance.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Finance/Domain/">
+    <Project Path="src/Modules/Finance/Domain/Modules.Finance.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Finance/Infrastructure/">
+    <Project Path="src/Modules/Finance/Infrastructure/Modules.Finance.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/" />
+  <Folder Name="/src/Modules/Identity/API/">
+    <Project Path="src/Modules/Identity/API/Modules.Identity.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/Application/">
+    <Project Path="src/Modules/Identity/Application/Modules.Identity.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/Domain/">
+    <Project Path="src/Modules/Identity/Domain/Modules.Identity.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/Infrastructure/">
+    <Project Path="src/Modules/Identity/Infrastructure/Modules.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Platform/" />
+  <Folder Name="/src/Modules/Platform/API/">
+    <Project Path="src/Modules/Platform/API/Modules.Platform.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Platform/Application/">
+    <Project Path="src/Modules/Platform/Application/Modules.Platform.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Platform/Domain/">
+    <Project Path="src/Modules/Platform/Domain/Modules.Platform.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Platform/Infrastructure/">
+    <Project Path="src/Modules/Platform/Infrastructure/Modules.Platform.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Project/" />
+  <Folder Name="/src/Modules/Project/API/">
+    <Project Path="src/Modules/Project/API/Modules.Project.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Project/Application/">
+    <Project Path="src/Modules/Project/Application/Modules.Project.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Project/Domain/">
+    <Project Path="src/Modules/Project/Domain/Modules.Project.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Project/Infrastructure/">
+    <Project Path="src/Modules/Project/Infrastructure/Modules.Project.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Sales/" />
+  <Folder Name="/src/Modules/Sales/API/">
+    <Project Path="src/Modules/Sales/API/Modules.Sales.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Sales/Application/">
+    <Project Path="src/Modules/Sales/Application/Modules.Sales.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Sales/Domain/">
+    <Project Path="src/Modules/Sales/Domain/Modules.Sales.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Sales/Infrastructure/">
+    <Project Path="src/Modules/Sales/Infrastructure/Modules.Sales.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Support/" />
+  <Folder Name="/src/Modules/Support/API/">
+    <Project Path="src/Modules/Support/API/Modules.Support.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Support/Application/">
+    <Project Path="src/Modules/Support/Application/Modules.Support.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Support/Domain/">
+    <Project Path="src/Modules/Support/Domain/Modules.Support.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Support/Infrastructure/">
+    <Project Path="src/Modules/Support/Infrastructure/Modules.Support.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CrmErp.ArchitectureTests/CrmErp.ArchitectureTests.csproj" />
+  </Folder>
+</Solution>
