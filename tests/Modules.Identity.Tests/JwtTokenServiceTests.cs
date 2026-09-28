@@ -1,5 +1,6 @@
 using System.Security.Claims;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Modules.Identity.Infrastructure.Options;
 using Modules.Identity.Infrastructure.Services;
 using Xunit;
 
@@ -11,19 +12,16 @@ public class JwtTokenServiceTests
 
     public JwtTokenServiceTests()
     {
-        var inMemorySettings = new Dictionary<string, string?>
+        var jwtOptions = new JwtOptions
         {
-            {"Jwt:Secret", "SuperSecretKeyForJwtTokenGeneration_MustBeAtLeast256BitsLong!"},
-            {"Jwt:Issuer", "TestIssuer"},
-            {"Jwt:Audience", "TestAudience"},
-            {"Jwt:AccessTokenExpirationMinutes", "15"}
+            Secret = "Development_Placeholder_Jwt_Secret_Key_Change_In_Production_32_Bytes!",
+            Issuer = "TestIssuer",
+            Audience = "TestAudience",
+            AccessTokenExpirationMinutes = 15,
+            RefreshTokenExpirationDays = 7
         };
 
-        IConfiguration configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(inMemorySettings)
-            .Build();
-
-        _service = new JwtTokenService(configuration);
+        _service = new JwtTokenService(Options.Create(jwtOptions));
     }
 
     [Fact]
