@@ -3,7 +3,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Domain\Modules.CRM.Domain.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\Application\BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Common\BuildingBlocks.Common.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\SharedKernel\BuildingBlocks.SharedKernel.csproj" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
   </ItemGroup>
 
   <PropertyGroup>
