@@ -19,7 +19,7 @@ The Identity Module provides production-ready authentication and permission-base
 ## Configuration (`appsettings.json`)
 ```json
 "Jwt": {
-  "Secret": "SuperSecretKeyForJwtTokenGeneration_MustBeAtLeast256BitsLong!",
+  "Secret": "Development_Placeholder_Jwt_Secret_Key_Change_In_Production_32_Bytes!",
   "Issuer": "CrmErpApi",
   "Audience": "CrmErpClients",
   "AccessTokenExpirationMinutes": 60,

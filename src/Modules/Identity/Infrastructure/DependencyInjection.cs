@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Modules.Identity.Application.Common.Interfaces;
 using Modules.Identity.Domain.Repositories;
 using Modules.Identity.Infrastructure.Authorization;
+using Modules.Identity.Infrastructure.Options;
 using Modules.Identity.Infrastructure.Persistence.Repositories;
 using Modules.Identity.Infrastructure.Services;
 
@@ -13,6 +14,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddIdentityInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddScoped<IdentityRepositories>();
         services.AddScoped<IUserRepository>(sp => sp.GetRequiredService<IdentityRepositories>());
         services.AddScoped<IRoleRepository>(sp => sp.GetRequiredService<IdentityRepositories>());
