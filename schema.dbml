@@ -1,0 +1,591 @@
+//////////////////////////////////////////////////////
+// Identity
+//////////////////////////////////////////////////////
+
+Table users {
+  id bigint [pk, increment]
+
+  name varchar
+  email varchar
+  password_hash varchar
+
+  is_active boolean
+
+  created_at timestamp
+  updated_at timestamp
+}
+
+
+Table roles {
+  id bigint [pk, increment]
+
+  name varchar
+}
+
+
+Table user_roles {
+  id bigint [pk, increment]
+
+  user_id bigint
+  role_id bigint
+}
+
+
+//////////////////////////////////////////////////////
+// CRM Core
+//////////////////////////////////////////////////////
+
+Table companies {
+  id bigint [pk, increment]
+
+  name varchar
+  industry varchar
+
+  website varchar
+  phone varchar
+  email varchar
+
+  address text
+
+  type varchar
+  // LEAD / CUSTOMER / INACTIVE
+
+  created_at timestamp
+  updated_at timestamp
+}
+
+
+Table contacts {
+  id bigint [pk, increment]
+
+  company_id bigint
+
+  name varchar
+  position varchar
+
+  phone varchar
+  email varchar
+
+  is_decision_maker boolean
+
+  influence_level varchar
+
+  created_at timestamp
+}
+
+
+//////////////////////////////////////////////////////
+// Lead Management
+//////////////////////////////////////////////////////
+
+Table leads {
+
+  id bigint [pk, increment]
+
+  company_id bigint
+
+  source varchar
+
+  status varchar
+
+  score int
+
+  assigned_to bigint
+
+  created_at timestamp
+}
+
+
+Table lead_research {
+
+  id bigint [pk, increment]
+
+  lead_id bigint
+
+  business_summary text
+
+  pain_points text
+
+  opportunities text
+
+  competitors text
+
+  notes text
+}
+
+
+Table activities {
+
+  id bigint [pk, increment]
+
+  lead_id bigint
+
+  user_id bigint
+
+  type varchar
+  // CALL EMAIL MEETING MESSAGE
+
+  description text
+
+  result text
+
+  quality_score int
+
+  created_at timestamp
+}
+
+
+Table sales_notes {
+
+  id bigint [pk, increment]
+
+  lead_id bigint
+
+  need_analysis text
+
+  objections text
+
+  strategy text
+
+  probability int
+
+  created_by bigint
+
+}
+
+
+//////////////////////////////////////////////////////
+// Sales Pipeline
+//////////////////////////////////////////////////////
+
+Table opportunities {
+
+  id bigint [pk, increment]
+
+  lead_id bigint
+
+  stage varchar
+
+  estimated_value decimal
+
+  probability int
+
+  expected_close_date date
+
+}
+
+
+Table proposals {
+
+  id bigint [pk, increment]
+
+  opportunity_id bigint
+
+  version varchar
+
+  amount decimal
+
+  discount decimal
+
+  valid_until date
+
+  status varchar
+
+}
+
+
+Table proposal_items {
+
+  id bigint [pk, increment]
+
+  proposal_id bigint
+
+  name varchar
+
+  description text
+
+  price decimal
+}
+
+
+//////////////////////////////////////////////////////
+// Customers & Projects
+//////////////////////////////////////////////////////
+
+Table customers {
+
+  id bigint [pk, increment]
+
+  company_id bigint
+
+  customer_since date
+
+}
+
+
+Table projects {
+
+  id bigint [pk, increment]
+
+  customer_id bigint
+
+  name varchar
+
+  type varchar
+
+  status varchar
+
+  start_date date
+
+  delivery_date date
+
+}
+
+
+Table project_requirements {
+
+  id bigint [pk, increment]
+
+  project_id bigint
+
+  business_goal text
+
+  features text
+
+  technology_notes text
+
+  target_audience text
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Technology Stack
+//////////////////////////////////////////////////////
+
+Table technologies {
+
+  id bigint [pk, increment]
+
+  name varchar
+
+  category varchar
+
+  vendor varchar
+
+  website varchar
+
+}
+
+
+Table project_technologies {
+
+  id bigint [pk, increment]
+
+  project_id bigint
+
+  technology_id bigint
+
+  version varchar
+
+  notes text
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Source Control
+//////////////////////////////////////////////////////
+
+Table repositories {
+
+  id bigint [pk, increment]
+
+  project_id bigint
+
+  type varchar
+
+  url varchar
+
+  branch varchar
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Deployment
+//////////////////////////////////////////////////////
+
+Table deployments {
+
+  id bigint [pk, increment]
+
+  project_id bigint
+
+  server varchar
+
+  provider varchar
+
+  domain varchar
+
+  ssl_status varchar
+
+  version varchar
+
+  deployed_at timestamp
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Contracts
+//////////////////////////////////////////////////////
+
+Table contracts {
+
+  id bigint [pk, increment]
+
+  customer_id bigint
+
+  project_id bigint
+
+  contract_number varchar
+
+  start_date date
+
+  end_date date
+
+  total_amount decimal
+
+  status varchar
+
+}
+
+
+Table contract_payments {
+
+  id bigint [pk, increment]
+
+  contract_id bigint
+
+  title varchar
+
+  amount decimal
+
+  due_date date
+
+  status varchar
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Finance
+//////////////////////////////////////////////////////
+
+Table transactions {
+
+  id bigint [pk, increment]
+
+  customer_id bigint
+
+  contract_id bigint
+
+  amount decimal
+
+  type varchar
+
+  status varchar
+
+  transaction_date date
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Support
+//////////////////////////////////////////////////////
+
+Table support_plans {
+
+  id bigint [pk, increment]
+
+  project_id bigint
+
+  start_date date
+
+  end_date date
+
+  days int
+
+}
+
+
+Table tickets {
+
+  id bigint [pk, increment]
+
+  customer_id bigint
+
+  project_id bigint
+
+  title varchar
+
+  description text
+
+  priority varchar
+
+  status varchar
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Tasks
+//////////////////////////////////////////////////////
+
+Table tasks {
+
+  id bigint [pk, increment]
+
+  assigned_to bigint
+
+  title varchar
+
+  description text
+
+  priority varchar
+
+  status varchar
+
+  deadline date
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Files
+//////////////////////////////////////////////////////
+
+Table files {
+
+  id bigint [pk, increment]
+
+  entity_type varchar
+
+  entity_id bigint
+
+  filename varchar
+
+  path varchar
+
+  uploaded_by bigint
+
+  created_at timestamp
+
+}
+
+
+
+//////////////////////////////////////////////////////
+// Audit
+//////////////////////////////////////////////////////
+
+Table audit_logs {
+
+  id bigint [pk, increment]
+
+  user_id bigint
+
+  entity_type varchar
+
+  entity_id bigint
+
+  action varchar
+
+  old_value text
+
+  new_value text
+
+  created_at timestamp
+}
+
+
+
+//////////////////////////////////////////////////////
+// Relations
+//////////////////////////////////////////////////////
+
+Ref: user_roles.user_id > users.id
+Ref: user_roles.role_id > roles.id
+
+
+Ref: contacts.company_id > companies.id
+
+
+Ref: leads.company_id > companies.id
+Ref: leads.assigned_to > users.id
+
+
+Ref: lead_research.lead_id > leads.id
+
+Ref: activities.lead_id > leads.id
+Ref: activities.user_id > users.id
+
+
+Ref: sales_notes.lead_id > leads.id
+Ref: sales_notes.created_by > users.id
+
+
+Ref: opportunities.lead_id > leads.id
+
+Ref: proposals.opportunity_id > opportunities.id
+
+Ref: proposal_items.proposal_id > proposals.id
+
+
+Ref: customers.company_id > companies.id
+
+
+Ref: projects.customer_id > customers.id
+
+Ref: project_requirements.project_id > projects.id
+
+
+Ref: project_technologies.project_id > projects.id
+Ref: project_technologies.technology_id > technologies.id
+
+
+Ref: repositories.project_id > projects.id
+
+Ref: deployments.project_id > projects.id
+
+
+Ref: contracts.customer_id > customers.id
+Ref: contracts.project_id > projects.id
+
+Ref: contract_payments.contract_id > contracts.id
+
+
+Ref: transactions.customer_id > customers.id
+Ref: transactions.contract_id > contracts.id
+
+
+Ref: support_plans.project_id > projects.id
+
+Ref: tickets.customer_id > customers.id
+Ref: tickets.project_id > projects.id
+
+
+Ref: tasks.assigned_to > users.id
+
+
+Ref: audit_logs.user_id > users.id
