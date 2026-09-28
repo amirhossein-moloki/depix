@@ -41,6 +41,18 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         return new Company(Guid.NewGuid(), name, industry, website, phone, email, address, type);
     }
 
+    public void MarkAsCustomer()
+    {
+        Type = "CUSTOMER";
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void MarkAsInactive()
+    {
+        Type = "INACTIVE";
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
     public void UpdateInfo(string name, string industry, string website, string phone, string email, Address address, string type)
     {
         Name = name;

@@ -1,4 +1,5 @@
 using BuildingBlocks.Domain.Models;
+using Modules.CRM.Domain.Events;
 
 namespace Modules.CRM.Domain.Entities;
 
@@ -35,6 +36,33 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
     public static Lead Create(Guid companyId, string source, string status = "NEW", int score = 0, Guid? assignedTo = null)
     {
         return new Lead(Guid.NewGuid(), companyId, source, status, score, assignedTo);
+    }
+
+    public void ConvertToCustomer()
+    {
+        if (Status == "CONVERTED") return;
+
+        Status = "CONVERTED";
+        UpdateTimestamp(DateTime.UtcNow);
+        AddDomainEvent(new LeadConvertedEvent(Id, CompanyId));
+    }
+
+    public void Qualify()
+    {
+        Status = "QUALIFIED";
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void Disqualify()
+    {
+        Status = "DISQUALIFIED";
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void AssignToUser(Guid userId)
+    {
+        AssignedTo = userId;
+        UpdateTimestamp(DateTime.UtcNow);
     }
 
     public void SetResearch(LeadResearch research)
