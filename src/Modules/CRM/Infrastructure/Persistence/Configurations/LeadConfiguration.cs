@@ -12,10 +12,18 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
 
         builder.HasKey(l => l.Id);
 
+        builder.Property(l => l.Title).HasMaxLength(200);
         builder.Property(l => l.Source).HasMaxLength(100);
+        builder.Property(l => l.Description).HasMaxLength(1000);
         builder.Property(l => l.Status).HasMaxLength(50).IsRequired();
+        builder.Property(l => l.EstimatedValue).HasPrecision(18, 2);
+        builder.Property(l => l.DisqualificationReason).HasMaxLength(500);
 
+        builder.HasIndex(l => l.CompanyId);
+        builder.HasIndex(l => l.ContactId);
         builder.HasIndex(l => l.Status);
+        builder.HasIndex(l => l.AssignedTo);
+        builder.HasIndex(l => l.CreatedAt);
 
         builder.HasOne(l => l.Research)
             .WithOne()

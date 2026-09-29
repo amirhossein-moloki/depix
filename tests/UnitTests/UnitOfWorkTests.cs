@@ -29,7 +29,7 @@ public class UnitOfWorkTests
         var unitOfWork = new UnitOfWork(dbContext, mockEventBus.Object);
 
         var lead = Lead.Create(Guid.NewGuid(), "Inbound");
-        lead.ConvertToCustomer(); // raises LeadConvertedEvent
+        lead.ConvertToCustomer(); // raises LeadStatusChangedEvent and LeadConvertedEvent
 
         dbContext.Set<Lead>().Add(lead);
 
@@ -39,6 +39,6 @@ public class UnitOfWorkTests
         // Assert
         Assert.True(result > 0);
         Assert.Empty(lead.DomainEvents);
-        mockEventBus.Verify(eb => eb.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockEventBus.Verify(eb => eb.PublishAsync(It.IsAny<IDomainEvent>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 }
