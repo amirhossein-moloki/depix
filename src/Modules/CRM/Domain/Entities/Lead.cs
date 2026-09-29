@@ -9,9 +9,14 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
     private readonly List<SalesNote> _salesNotes = new();
 
     public Guid CompanyId { get; private set; }
+    public Guid? ContactId { get; private set; }
+    public string Title { get; private set; } = string.Empty;
     public string Source { get; private set; } = string.Empty;
+    public string Description { get; private set; } = string.Empty;
     public string Status { get; private set; } = string.Empty;
     public int Score { get; private set; }
+    public decimal? EstimatedValue { get; private set; }
+    public string? DisqualificationReason { get; private set; }
     public Guid? AssignedTo { get; private set; }
 
     public bool IsDeleted { get; private set; }
@@ -22,46 +27,192 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
     public IReadOnlyCollection<Activity> Activities => _activities.AsReadOnly();
     public IReadOnlyCollection<SalesNote> SalesNotes => _salesNotes.AsReadOnly();
 
+    public static readonly HashSet<string> ValidStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "NEW",
+        "CONTACTED",
+        "QUALIFIED",
+        "PROPOSAL",
+        "WON",
+        "DISQUALIFIED",
+        "CONVERTED"
+    };
+
     private Lead() { }
 
-    public Lead(Guid id, Guid companyId, string source, string status, int score, Guid? assignedTo = null) : base(id)
+    public Lead(
+        Guid id,
+        Guid companyId,
+        string title,
+        string source,
+        string description = "",
+        decimal? estimatedValue = null,
+        Guid? contactId = null,
+        Guid? assignedTo = null,
+        int score = 0,
+        string status = "NEW",
+        string? disqualificationReason = null) : base(id)
     {
         CompanyId = companyId;
-        Source = source;
-        Status = status;
-        Score = score;
+        Title = string.IsNullOrWhiteSpace(title) ? source : title;
+        Source = source ?? string.Empty;
+        Description = description ?? string.Empty;
+        EstimatedValue = estimatedValue;
+        ContactId = contactId;
         AssignedTo = assignedTo;
+        Score = score;
+        Status = string.IsNullOrWhiteSpace(status) ? "NEW" : status.ToUpperInvariant();
+        DisqualificationReason = disqualificationReason;
     }
 
-    public static Lead Create(Guid companyId, string source, string status = "NEW", int score = 0, Guid? assignedTo = null)
+    public static Lead Create(
+        Guid companyId,
+        string title,
+        string source,
+        string description = "",
+        decimal? estimatedValue = null,
+        Guid? contactId = null,
+        Guid? assignedTo = null,
+        int score = 0,
+        string status = "NEW")
     {
-        return new Lead(Guid.NewGuid(), companyId, source, status, score, assignedTo);
+        if (companyId == Guid.Empty)
+        {
+            throw new ArgumentException("Company ID is required.", nameof(companyId));
+        }
+
+        var normalizedStatus = string.IsNullOrWhiteSpace(status) ? "NEW" : status.Trim().ToUpperInvariant();
+        if (!ValidStatuses.Contains(normalizedStatus))
+        {
+            throw new ArgumentException($"Invalid lead status '{status}'.", nameof(status));
+        }
+
+        return new Lead(
+            Guid.NewGuid(),
+            companyId,
+            title,
+            source,
+            description,
+            estimatedValue,
+            contactId,
+            assignedTo,
+            score,
+            normalizedStatus);
+    }
+
+    public static Lead Create(Guid companyId, string source)
+    {
+        return Create(companyId, source, source, string.Empty, null, null, null, 0, "NEW");
+    }
+
+    public void UpdateInformation(
+        string title,
+        string source,
+        string description,
+        decimal? estimatedValue,
+        Guid? contactId)
+    {
+        Title = string.IsNullOrWhiteSpace(title) ? Title : title;
+        Source = source ?? Source;
+        Description = description ?? Description;
+        EstimatedValue = estimatedValue;
+        ContactId = contactId;
+        UpdateTimestamp(DateTime.UtcNow);
     }
 
     public void ConvertToCustomer()
     {
         if (Status == "CONVERTED") return;
 
+        var oldStatus = Status;
         Status = "CONVERTED";
         UpdateTimestamp(DateTime.UtcNow);
+        AddDomainEvent(new LeadStatusChangedEvent(Id, oldStatus, "CONVERTED"));
         AddDomainEvent(new LeadConvertedEvent(Id, CompanyId));
     }
 
     public void Qualify()
     {
+        if (Status == "QUALIFIED") return;
+
+        var oldStatus = Status;
         Status = "QUALIFIED";
         UpdateTimestamp(DateTime.UtcNow);
+        AddDomainEvent(new LeadStatusChangedEvent(Id, oldStatus, "QUALIFIED"));
+        AddDomainEvent(new LeadQualifiedEvent(Id, CompanyId));
     }
 
-    public void Disqualify()
+    public void Disqualify(string reason)
     {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new ArgumentException("Disqualification reason is required.", nameof(reason));
+        }
+
+        var oldStatus = Status;
         Status = "DISQUALIFIED";
+        DisqualificationReason = reason;
         UpdateTimestamp(DateTime.UtcNow);
+        AddDomainEvent(new LeadStatusChangedEvent(Id, oldStatus, "DISQUALIFIED"));
+        AddDomainEvent(new LeadDisqualifiedEvent(Id, CompanyId, reason));
     }
 
-    public void AssignToUser(Guid userId)
+    public void ChangeStatus(string newStatus, string? reason = null)
     {
+        if (string.IsNullOrWhiteSpace(newStatus))
+        {
+            throw new ArgumentException("Status cannot be empty.", nameof(newStatus));
+        }
+
+        var normalizedStatus = newStatus.Trim().ToUpperInvariant();
+        if (!ValidStatuses.Contains(normalizedStatus))
+        {
+            throw new ArgumentException($"Invalid status transition target '{newStatus}'.", nameof(newStatus));
+        }
+
+        if (normalizedStatus == "DISQUALIFIED")
+        {
+            Disqualify(reason ?? "Disqualified");
+            return;
+        }
+
+        if (normalizedStatus == "QUALIFIED")
+        {
+            Qualify();
+            return;
+        }
+
+        if (normalizedStatus == "CONVERTED")
+        {
+            ConvertToCustomer();
+            return;
+        }
+
+        if (Status == normalizedStatus) return;
+
+        var oldStatus = Status;
+        Status = normalizedStatus;
+        UpdateTimestamp(DateTime.UtcNow);
+        AddDomainEvent(new LeadStatusChangedEvent(Id, oldStatus, normalizedStatus));
+    }
+
+    public void AssignToUser(Guid? userId)
+    {
+        if (AssignedTo == userId) return;
+
         AssignedTo = userId;
+        UpdateTimestamp(DateTime.UtcNow);
+        AddDomainEvent(new LeadAssignedEvent(Id, userId));
+    }
+
+    public void UpdateScore(int score)
+    {
+        if (score < 0)
+        {
+            throw new ArgumentException("Lead score cannot be negative.", nameof(score));
+        }
+
+        Score = score;
         UpdateTimestamp(DateTime.UtcNow);
     }
 
@@ -85,8 +236,7 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
 
     public void UpdateStatus(string status)
     {
-        Status = status;
-        UpdateTimestamp(DateTime.UtcNow);
+        ChangeStatus(status);
     }
 
     public void SoftDelete(Guid? deletedBy = null)
