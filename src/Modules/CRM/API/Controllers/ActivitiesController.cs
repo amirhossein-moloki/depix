@@ -13,6 +13,9 @@ using ValidationException = BuildingBlocks.Common.Exceptions.ValidationException
 
 namespace Modules.CRM.API.Controllers;
 
+/// <summary>
+/// API Controller managing CRM interaction activities and history.
+/// </summary>
 [ApiController]
 [Route("api/crm/activities")]
 [Authorize]
