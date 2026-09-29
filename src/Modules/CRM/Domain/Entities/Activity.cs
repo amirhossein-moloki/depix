@@ -2,6 +2,9 @@ using BuildingBlocks.Domain.Models;
 
 namespace Modules.CRM.Domain.Entities;
 
+/// <summary>
+/// Represents a customer interaction or sales activity performed for a lead, contact, or company.
+/// </summary>
 public class Activity : AuditableEntity, ISoftDelete
 {
     public Guid LeadId { get; private set; }

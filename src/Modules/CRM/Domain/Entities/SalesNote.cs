@@ -2,6 +2,9 @@ using BuildingBlocks.Domain.Models;
 
 namespace Modules.CRM.Domain.Entities;
 
+/// <summary>
+/// Represents internal CRM pre-sales knowledge, requirements analysis, objections, and strategies for a lead.
+/// </summary>
 public class SalesNote : AuditableEntity, ISoftDelete
 {
     public Guid LeadId { get; private set; }

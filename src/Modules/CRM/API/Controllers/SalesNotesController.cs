@@ -13,6 +13,9 @@ using ValidationException = BuildingBlocks.Common.Exceptions.ValidationException
 
 namespace Modules.CRM.API.Controllers;
 
+/// <summary>
+/// API Controller managing internal pre-sales notes and CRM knowledge context.
+/// </summary>
 [ApiController]
 [Route("api/crm/sales-notes")]
 [Authorize]
