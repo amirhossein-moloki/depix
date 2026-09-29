@@ -1,6 +1,10 @@
 using BuildingBlocks.Application.CQRS;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Modules.CRM.Application.Features.Activities.Commands;
+using Modules.CRM.Application.Features.Activities.DTOs;
+using Modules.CRM.Application.Features.Activities.Queries;
+using Modules.CRM.Application.Features.Activities.Validators;
 using Modules.CRM.Application.Features.Companies.Commands;
 using Modules.CRM.Application.Features.Companies.DTOs;
 using Modules.CRM.Application.Features.Companies.Queries;
@@ -13,6 +17,10 @@ using Modules.CRM.Application.Features.Leads.Commands;
 using Modules.CRM.Application.Features.Leads.DTOs;
 using Modules.CRM.Application.Features.Leads.Queries;
 using Modules.CRM.Application.Features.Leads.Validators;
+using Modules.CRM.Application.Features.SalesNotes.Commands;
+using Modules.CRM.Application.Features.SalesNotes.DTOs;
+using Modules.CRM.Application.Features.SalesNotes.Queries;
+using Modules.CRM.Application.Features.SalesNotes.Validators;
 
 namespace Modules.CRM.Application;
 
@@ -50,6 +58,22 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<SearchLeadsQuery, PagedResult<LeadListItemDto>>, SearchLeadsQueryHandler>();
         services.AddScoped<IQueryHandler<GetLeadPipelineQuery, LeadPipelineDto>, GetLeadPipelineQueryHandler>();
 
+        // Activities Handlers
+        services.AddScoped<ICommandHandler<CreateActivityCommand, ActivityDto>, CreateActivityCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateActivityCommand, ActivityDto>, UpdateActivityCommandHandler>();
+        services.AddScoped<ICommandHandler<ArchiveActivityCommand>, ArchiveActivityCommandHandler>();
+        services.AddScoped<IQueryHandler<GetActivityByIdQuery, ActivityDto>, GetActivityByIdQueryHandler>();
+        services.AddScoped<IQueryHandler<GetActivitiesQuery, PagedResult<ActivityListItemDto>>, GetActivitiesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetLeadActivitiesQuery, LeadActivityHistoryDto>, GetLeadActivitiesQueryHandler>();
+
+        // SalesNotes Handlers
+        services.AddScoped<ICommandHandler<CreateSalesNoteCommand, SalesNoteDto>, CreateSalesNoteCommandHandler>();
+        services.AddScoped<ICommandHandler<UpdateSalesNoteCommand, SalesNoteDto>, UpdateSalesNoteCommandHandler>();
+        services.AddScoped<ICommandHandler<ArchiveSalesNoteCommand>, ArchiveSalesNoteCommandHandler>();
+        services.AddScoped<IQueryHandler<GetSalesNoteByIdQuery, SalesNoteDto>, GetSalesNoteByIdQueryHandler>();
+        services.AddScoped<IQueryHandler<GetSalesNotesQuery, PagedResult<SalesNoteListItemDto>>, GetSalesNotesQueryHandler>();
+        services.AddScoped<IQueryHandler<GetLeadSalesNotesQuery, LeadSalesContextDto>, GetLeadSalesNotesQueryHandler>();
+
         // Validators
         services.AddScoped<IValidator<CreateCompanyCommand>, CreateCompanyCommandValidator>();
         services.AddScoped<IValidator<UpdateCompanyCommand>, UpdateCompanyCommandValidator>();
@@ -62,6 +86,12 @@ public static class DependencyInjection
         services.AddScoped<IValidator<ChangeLeadStatusCommand>, ChangeLeadStatusCommandValidator>();
         services.AddScoped<IValidator<QualifyLeadCommand>, QualifyLeadCommandValidator>();
         services.AddScoped<IValidator<DisqualifyLeadCommand>, DisqualifyLeadCommandValidator>();
+
+        services.AddScoped<IValidator<CreateActivityCommand>, CreateActivityCommandValidator>();
+        services.AddScoped<IValidator<UpdateActivityCommand>, UpdateActivityCommandValidator>();
+
+        services.AddScoped<IValidator<CreateSalesNoteCommand>, CreateSalesNoteCommandValidator>();
+        services.AddScoped<IValidator<UpdateSalesNoteCommand>, UpdateSalesNoteCommandValidator>();
 
         return services;
     }

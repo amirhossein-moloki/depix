@@ -10,7 +10,10 @@ public static class DependencyInjection
     public static IServiceCollection AddCRMInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<ICompanyRepository, CompanyRepository>();
+        services.AddScoped<IContactRepository, ContactRepository>();
         services.AddScoped<ILeadRepository, LeadRepository>();
+        services.AddScoped<IActivityRepository, ActivityRepository>();
+        services.AddScoped<ISalesNoteRepository, SalesNoteRepository>();
         return services;
     }
 }
