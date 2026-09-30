@@ -24,6 +24,9 @@
     <ProjectReference Include="..\..\src\Host\CrmErp.Host\CrmErp.Host.csproj" />
     <ProjectReference Include="..\..\src\Modules\Customer\Domain\Modules.Customer.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Customer\Infrastructure\Modules.Customer.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Sales\Domain\Modules.Sales.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Sales\Application\Modules.Sales.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Sales\Infrastructure\Modules.Sales.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
