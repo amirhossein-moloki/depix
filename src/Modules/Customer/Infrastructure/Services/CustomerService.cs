@@ -21,14 +21,17 @@ public class CustomerService : ICustomerService
             return existingCustomer.Id;
         }
 
-        var newCustomer = CustomerEntity.Create(companyId, DateOnly.FromDateTime(DateTime.UtcNow));
+        var year = DateTime.UtcNow.Year;
+        var randomPart = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpperInvariant();
+        var customerNumber = $"CUST-{year}-{randomPart}";
+
+        var newCustomer = CustomerEntity.Create(companyId, customerNumber, DateOnly.FromDateTime(DateTime.UtcNow));
         await _customerRepository.AddAsync(newCustomer, cancellationToken);
         return newCustomer.Id;
     }
 
     public async Task<bool> CustomerExistsForCompanyAsync(Guid companyId, CancellationToken cancellationToken = default)
     {
-        var customer = await _customerRepository.GetByCompanyIdAsync(companyId, cancellationToken);
-        return customer != null;
+        return await _customerRepository.ExistsForCompanyAsync(companyId, cancellationToken);
     }
 }
