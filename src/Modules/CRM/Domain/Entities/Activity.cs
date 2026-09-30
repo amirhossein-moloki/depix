@@ -46,7 +46,7 @@ public class Activity : AuditableEntity, ISoftDelete
         Subject = string.IsNullOrWhiteSpace(subject) ? (description ?? string.Empty) : subject.Trim();
         Description = description ?? string.Empty;
         Result = result ?? string.Empty;
-        QualityScore = qualityScore;
+        QualityScore = Math.Clamp(qualityScore, 0, 100);
         ContactId = contactId;
         CompanyId = companyId;
         OccurredAt = occurredAt ?? DateTime.UtcNow;
@@ -116,7 +116,7 @@ public class Activity : AuditableEntity, ISoftDelete
         Subject = string.IsNullOrWhiteSpace(subject) ? Subject : subject.Trim();
         Description = description ?? Description;
         Result = result ?? Result;
-        QualityScore = qualityScore;
+        QualityScore = Math.Clamp(qualityScore, 0, 100);
         ContactId = contactId ?? ContactId;
         CompanyId = companyId ?? CompanyId;
         if (occurredAt.HasValue) OccurredAt = occurredAt.Value;
