@@ -28,6 +28,9 @@
     <ProjectReference Include="..\..\src\Modules\Sales\Domain\Modules.Sales.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Application\Modules.Sales.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Infrastructure\Modules.Sales.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customer\Domain\Modules.Customer.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customer\Application\Modules.Customer.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customer\Infrastructure\Modules.Customer.Infrastructure.csproj" />
     <PackageReference Include="NSubstitute" Version="5.1.0" />
     <ProjectReference Include="..\..\src\Modules\Finance\Domain\Modules.Finance.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Identity\Infrastructure\Modules.Identity.Infrastructure.csproj" />
