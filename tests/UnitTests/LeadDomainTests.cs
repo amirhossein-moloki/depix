@@ -20,6 +20,8 @@ public class LeadDomainTests
         Assert.Equal(50000m, lead.EstimatedValue);
         Assert.Equal("NEW", lead.Status);
         Assert.Equal(0, lead.Score);
+        Assert.Null(lead.CustomerId);
+        Assert.Null(lead.ConvertedAt);
     }
 
     [Fact]
@@ -35,17 +37,59 @@ public class LeadDomainTests
     }
 
     [Fact]
-    public void ConvertToCustomer_ShouldUpdateStatusAndRaiseDomainEvents()
+    public void ConvertToCustomer_WhenQualified_ShouldUpdateStatusAndRaiseDomainEvents()
+    {
+        var companyId = Guid.NewGuid();
+        var lead = Lead.Create(companyId, "Website Redesign", "Website");
+        lead.Qualify();
+
+        var customerId = Guid.NewGuid();
+        lead.ConvertToCustomer(customerId);
+
+        Assert.Equal("CONVERTED", lead.Status);
+        Assert.Equal(customerId, lead.CustomerId);
+        Assert.NotNull(lead.ConvertedAt);
+        Assert.Contains(lead.DomainEvents, e => e is LeadConvertedEvent c && c.CustomerId == customerId);
+        Assert.Contains(lead.DomainEvents, e => e is LeadStatusChangedEvent);
+    }
+
+    [Fact]
+    public void ConvertToCustomer_WhenNewStatus_ShouldThrowInvalidOperationException()
     {
         var companyId = Guid.NewGuid();
         var lead = Lead.Create(companyId, "Website Redesign", "Website");
 
-        lead.ConvertToCustomer();
+        var ex = Assert.Throws<InvalidOperationException>(() => lead.ConvertToCustomer(Guid.NewGuid()));
+        Assert.Contains("cannot be converted", ex.Message);
+    }
 
-        Assert.Equal("CONVERTED", lead.Status);
-        Assert.Equal(2, lead.DomainEvents.Count);
-        Assert.Contains(lead.DomainEvents, e => e is LeadConvertedEvent);
-        Assert.Contains(lead.DomainEvents, e => e is LeadStatusChangedEvent);
+    [Fact]
+    public void ConvertToCustomer_WhenAlreadyConverted_ShouldThrowInvalidOperationException()
+    {
+        var companyId = Guid.NewGuid();
+        var lead = Lead.Create(companyId, "Website Redesign", "Website");
+        lead.Qualify();
+        lead.ConvertToCustomer(Guid.NewGuid());
+
+        var ex = Assert.Throws<InvalidOperationException>(() => lead.ConvertToCustomer(Guid.NewGuid()));
+        Assert.Contains("already been converted", ex.Message);
+    }
+
+    [Fact]
+    public void CanConvert_WhenQualified_ShouldReturnTrue()
+    {
+        var lead = Lead.Create(Guid.NewGuid(), "Website Redesign", "Website");
+        lead.Qualify();
+
+        Assert.True(lead.CanConvert());
+    }
+
+    [Fact]
+    public void CanConvert_WhenNew_ShouldReturnFalse()
+    {
+        var lead = Lead.Create(Guid.NewGuid(), "Website Redesign", "Website");
+
+        Assert.False(lead.CanConvert());
     }
 
     [Fact]

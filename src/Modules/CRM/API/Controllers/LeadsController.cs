@@ -25,6 +25,7 @@ public class LeadsController : ControllerBase
     private readonly ICommandHandler<QualifyLeadCommand, LeadDto> _qualifyLeadHandler;
     private readonly ICommandHandler<DisqualifyLeadCommand, LeadDto> _disqualifyLeadHandler;
     private readonly ICommandHandler<ArchiveLeadCommand> _archiveLeadHandler;
+    private readonly ICommandHandler<ConvertLeadCommand, LeadConversionResultDto> _convertLeadHandler;
 
     private readonly IQueryHandler<GetLeadByIdQuery, LeadDto> _getLeadByIdHandler;
     private readonly IQueryHandler<GetLeadsQuery, PagedResult<LeadListItemDto>> _getLeadsHandler;
@@ -37,6 +38,7 @@ public class LeadsController : ControllerBase
     private readonly IValidator<ChangeLeadStatusCommand> _changeStatusValidator;
     private readonly IValidator<QualifyLeadCommand> _qualifyValidator;
     private readonly IValidator<DisqualifyLeadCommand> _disqualifyValidator;
+    private readonly IValidator<ConvertLeadCommand> _convertValidator;
 
     public LeadsController(
         ICommandHandler<CreateLeadCommand, LeadDto> createLeadHandler,
@@ -46,6 +48,7 @@ public class LeadsController : ControllerBase
         ICommandHandler<QualifyLeadCommand, LeadDto> qualifyLeadHandler,
         ICommandHandler<DisqualifyLeadCommand, LeadDto> disqualifyLeadHandler,
         ICommandHandler<ArchiveLeadCommand> archiveLeadHandler,
+        ICommandHandler<ConvertLeadCommand, LeadConversionResultDto> convertLeadHandler,
         IQueryHandler<GetLeadByIdQuery, LeadDto> getLeadByIdHandler,
         IQueryHandler<GetLeadsQuery, PagedResult<LeadListItemDto>> getLeadsHandler,
         IQueryHandler<SearchLeadsQuery, PagedResult<LeadListItemDto>> searchLeadsHandler,
@@ -55,7 +58,8 @@ public class LeadsController : ControllerBase
         IValidator<AssignLeadCommand> assignValidator,
         IValidator<ChangeLeadStatusCommand> changeStatusValidator,
         IValidator<QualifyLeadCommand> qualifyValidator,
-        IValidator<DisqualifyLeadCommand> disqualifyValidator)
+        IValidator<DisqualifyLeadCommand> disqualifyValidator,
+        IValidator<ConvertLeadCommand> convertValidator)
     {
         _createLeadHandler = createLeadHandler;
         _updateLeadHandler = updateLeadHandler;
@@ -64,6 +68,7 @@ public class LeadsController : ControllerBase
         _qualifyLeadHandler = qualifyLeadHandler;
         _disqualifyLeadHandler = disqualifyLeadHandler;
         _archiveLeadHandler = archiveLeadHandler;
+        _convertLeadHandler = convertLeadHandler;
         _getLeadByIdHandler = getLeadByIdHandler;
         _getLeadsHandler = getLeadsHandler;
         _searchLeadsHandler = searchLeadsHandler;
@@ -74,6 +79,7 @@ public class LeadsController : ControllerBase
         _changeStatusValidator = changeStatusValidator;
         _qualifyValidator = qualifyValidator;
         _disqualifyValidator = disqualifyValidator;
+        _convertValidator = convertValidator;
     }
 
     [HttpPost]
@@ -263,6 +269,23 @@ public class LeadsController : ControllerBase
 
         var lead = await _disqualifyLeadHandler.HandleAsync(command, cancellationToken);
         return Ok(ResponseFactory.Success(lead, "Lead disqualified successfully."));
+    }
+
+    [HttpPost("{id:guid}/convert")]
+    [Authorize(Policy = "CRM.Lead.Convert")]
+    public async Task<IActionResult> ConvertLead(Guid id, CancellationToken cancellationToken)
+    {
+        var command = new ConvertLeadCommand(id);
+
+        var validationResult = await _convertValidator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(e => new ValidationErrorDetail(e.PropertyName, e.ErrorMessage)).ToList();
+            throw new ValidationException("Lead conversion validation failed.", errors);
+        }
+
+        var result = await _convertLeadHandler.HandleAsync(command, cancellationToken);
+        return Ok(ResponseFactory.Success(result, "Lead converted successfully."));
     }
 
     [HttpDelete("{id:guid}")]

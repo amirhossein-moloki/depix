@@ -2,4 +2,4 @@ using BuildingBlocks.Domain.Events;
 
 namespace Modules.CRM.Domain.Events;
 
-public record LeadConvertedEvent(Guid LeadId, Guid CompanyId) : DomainEvent;
+public record LeadConvertedEvent(Guid LeadId, Guid CompanyId, Guid CustomerId = default) : DomainEvent;
