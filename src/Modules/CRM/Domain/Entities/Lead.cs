@@ -18,6 +18,8 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
     public decimal? EstimatedValue { get; private set; }
     public string? DisqualificationReason { get; private set; }
     public Guid? AssignedTo { get; private set; }
+    public Guid? CustomerId { get; private set; }
+    public DateTime? ConvertedAt { get; private set; }
 
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -38,6 +40,13 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
         "CONVERTED"
     };
 
+    public static readonly HashSet<string> ConvertibleStatuses = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "QUALIFIED",
+        "PROPOSAL",
+        "WON"
+    };
+
     private Lead() { }
 
     public Lead(
@@ -51,7 +60,9 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
         Guid? assignedTo = null,
         int score = 0,
         string status = "NEW",
-        string? disqualificationReason = null) : base(id)
+        string? disqualificationReason = null,
+        Guid? customerId = null,
+        DateTime? convertedAt = null) : base(id)
     {
         CompanyId = companyId;
         Title = string.IsNullOrWhiteSpace(title) ? source : title;
@@ -63,6 +74,8 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
         Score = score;
         Status = string.IsNullOrWhiteSpace(status) ? "NEW" : status.ToUpperInvariant();
         DisqualificationReason = disqualificationReason;
+        CustomerId = customerId;
+        ConvertedAt = convertedAt;
     }
 
     public static Lead Create(
@@ -120,15 +133,41 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
         UpdateTimestamp(DateTime.UtcNow);
     }
 
-    public void ConvertToCustomer()
+    public bool CanConvert()
     {
-        if (Status == "CONVERTED") return;
+        return !IsDeleted && Status != "CONVERTED" && CustomerId == null && ConvertibleStatuses.Contains(Status);
+    }
+
+    public void ConvertToCustomer(Guid customerId)
+    {
+        if (Status == "CONVERTED" || CustomerId != null)
+        {
+            throw new InvalidOperationException("Lead has already been converted.");
+        }
+
+        if (!ConvertibleStatuses.Contains(Status))
+        {
+            throw new InvalidOperationException($"Lead in status '{Status}' cannot be converted. Only QUALIFIED, PROPOSAL, or WON leads can be converted.");
+        }
+
+        if (customerId == Guid.Empty)
+        {
+            throw new ArgumentException("Customer ID is required for conversion.", nameof(customerId));
+        }
 
         var oldStatus = Status;
         Status = "CONVERTED";
+        CustomerId = customerId;
+        ConvertedAt = DateTime.UtcNow;
+
         UpdateTimestamp(DateTime.UtcNow);
         AddDomainEvent(new LeadStatusChangedEvent(Id, oldStatus, "CONVERTED"));
-        AddDomainEvent(new LeadConvertedEvent(Id, CompanyId));
+        AddDomainEvent(new LeadConvertedEvent(Id, CompanyId, customerId));
+    }
+
+    public void ConvertToCustomer()
+    {
+        ConvertToCustomer(Guid.NewGuid());
     }
 
     public void Qualify()
@@ -184,7 +223,7 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
 
         if (normalizedStatus == "CONVERTED")
         {
-            ConvertToCustomer();
+            ConvertToCustomer(CustomerId ?? Guid.NewGuid());
             return;
         }
 

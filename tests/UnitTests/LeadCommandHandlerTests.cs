@@ -1,3 +1,4 @@
+using BuildingBlocks.Application.Contracts;
 using BuildingBlocks.Application.Persistence;
 using BuildingBlocks.Common.Exceptions;
 using Modules.CRM.Application.Features.Leads.Commands;
@@ -14,6 +15,7 @@ public class LeadCommandHandlerTests
     private readonly ILeadRepository _leadRepository = Substitute.For<ILeadRepository>();
     private readonly ICompanyRepository _companyRepository = Substitute.For<ICompanyRepository>();
     private readonly IContactRepository _contactRepository = Substitute.For<IContactRepository>();
+    private readonly ICustomerService _customerService = Substitute.For<ICustomerService>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 
     [Fact]
@@ -52,6 +54,67 @@ public class LeadCommandHandlerTests
 
         // Act & Assert
         await Assert.ThrowsAsync<EntityNotFoundException>(() => handler.HandleAsync(command));
+    }
+
+    [Fact]
+    public async Task ConvertLeadHandler_WithQualifiedLead_ShouldConvertAndReturnResult()
+    {
+        // Arrange
+        var companyId = Guid.NewGuid();
+        var customerId = Guid.NewGuid();
+        var lead = Lead.Create(companyId, "Portal Dev", "Inbound");
+        lead.Qualify();
+
+        _leadRepository.GetByIdAsync(lead.Id, Arg.Any<CancellationToken>()).Returns(lead);
+        _customerService.GetOrCreateCustomerForCompanyAsync(companyId, Arg.Any<CancellationToken>()).Returns(customerId);
+
+        var handler = new ConvertLeadCommandHandler(_leadRepository, _customerService, _unitOfWork);
+        var command = new ConvertLeadCommand(lead.Id);
+
+        // Act
+        var result = await handler.HandleAsync(command);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(lead.Id, result.LeadId);
+        Assert.Equal(customerId, result.CustomerId);
+        Assert.Equal(companyId, result.CompanyId);
+        Assert.Equal("CONVERTED", result.Status);
+        _leadRepository.Received(1).Update(lead);
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ConvertLeadHandler_WithMissingLead_ShouldThrowEntityNotFoundException()
+    {
+        // Arrange
+        var leadId = Guid.NewGuid();
+        _leadRepository.GetByIdAsync(leadId, Arg.Any<CancellationToken>()).Returns((Lead?)null);
+
+        var handler = new ConvertLeadCommandHandler(_leadRepository, _customerService, _unitOfWork);
+        var command = new ConvertLeadCommand(leadId);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<EntityNotFoundException>(() => handler.HandleAsync(command));
+    }
+
+    [Fact]
+    public async Task ConvertLeadHandler_WithAlreadyConvertedLead_ShouldThrowBusinessRuleException()
+    {
+        // Arrange
+        var companyId = Guid.NewGuid();
+        var customerId = Guid.NewGuid();
+        var lead = Lead.Create(companyId, "Portal Dev", "Inbound");
+        lead.Qualify();
+        lead.ConvertToCustomer(customerId);
+
+        _leadRepository.GetByIdAsync(lead.Id, Arg.Any<CancellationToken>()).Returns(lead);
+
+        var handler = new ConvertLeadCommandHandler(_leadRepository, _customerService, _unitOfWork);
+        var command = new ConvertLeadCommand(lead.Id);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<BusinessRuleException>(() => handler.HandleAsync(command));
     }
 
     [Fact]

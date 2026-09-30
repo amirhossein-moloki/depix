@@ -16,11 +16,14 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="NSubstitute" Version="5.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\BuildingBlocks\Infrastructure\BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Host\CrmErp.Host\CrmErp.Host.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customer\Domain\Modules.Customer.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customer\Infrastructure\Modules.Customer.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
