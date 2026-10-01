@@ -11,6 +11,18 @@ namespace IntegrationTests;
 
 public class OpportunityEfInMemoryTests
 {
+    static OpportunityEfInMemoryTests()
+    {
+        _ = Modules.Identity.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.CRM.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Sales.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Customer.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Project.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Finance.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Support.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Platform.Infrastructure.AssemblyReference.Assembly;
+    }
+
     private ApplicationDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()

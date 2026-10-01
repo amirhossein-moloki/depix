@@ -36,6 +36,8 @@
     <ProjectReference Include="..\..\src\Modules\Project\Application\Modules.Project.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Project\Infrastructure\Modules.Project.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Finance\Domain\Modules.Finance.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Finance\Application\Modules.Finance.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Finance\Infrastructure\Modules.Finance.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Identity\Infrastructure\Modules.Identity.Infrastructure.csproj" />
   </ItemGroup>
 

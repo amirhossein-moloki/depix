@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Reflection;
 using BuildingBlocks.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +13,7 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        var moduleAssemblies = AppDomain.CurrentDomain.GetAssemblies()
-            .Where(a => a.FullName != null && (a.FullName.StartsWith("Modules.") || a.FullName.StartsWith("BuildingBlocks.")))
-            .ToArray();
+        var moduleAssemblies = GetModuleAssemblies();
 
         foreach (var assembly in moduleAssemblies)
         {
@@ -31,5 +30,36 @@ public class ApplicationDbContext : DbContext
                 modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
             }
         }
+    }
+
+    private static Assembly[] GetModuleAssemblies()
+    {
+        var loadedAssemblies = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => a.FullName != null && (a.FullName.StartsWith("Modules.") || a.FullName.StartsWith("BuildingBlocks.")))
+            .ToList();
+
+        var moduleNames = new[] { "Identity", "CRM", "Sales", "Customer", "Project", "Finance", "Support", "Platform" };
+
+        foreach (var module in moduleNames)
+        {
+            var infraAssemblyName = $"Modules.{module}.Infrastructure";
+            if (!loadedAssemblies.Any(a => a.GetName().Name == infraAssemblyName))
+            {
+                try
+                {
+                    var loaded = Assembly.Load(infraAssemblyName);
+                    if (loaded != null)
+                    {
+                        loadedAssemblies.Add(loaded);
+                    }
+                }
+                catch
+                {
+                    // Ignore assembly load failures if a module infrastructure is missing
+                }
+            }
+        }
+
+        return loadedAssemblies.ToArray();
     }
 }
