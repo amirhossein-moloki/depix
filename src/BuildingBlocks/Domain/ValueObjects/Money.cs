@@ -51,6 +51,15 @@ public class Money : ValueObject
         return new Money(Amount - other.Amount, Currency);
     }
 
+    public Money Multiply(decimal multiplier)
+    {
+        if (multiplier < 0)
+        {
+            throw new ArgumentException("Multiplier cannot be negative.", nameof(multiplier));
+        }
+        return new Money(Math.Round(Amount * multiplier, 2, MidpointRounding.AwayFromZero), Currency);
+    }
+
     private void EnsureSameCurrency(Money other)
     {
         if (Currency != other.Currency)
@@ -67,4 +76,8 @@ public class Money : ValueObject
 
     public static Money operator +(Money left, Money right) => left.Add(right);
     public static Money operator -(Money left, Money right) => left.Subtract(right);
+    public static Money operator *(Money money, decimal multiplier) => money.Multiply(multiplier);
+    public static Money operator *(decimal multiplier, Money money) => money.Multiply(multiplier);
+    public static Money operator *(Money money, int multiplier) => money.Multiply(multiplier);
+    public static Money operator *(int multiplier, Money money) => money.Multiply(multiplier);
 }
