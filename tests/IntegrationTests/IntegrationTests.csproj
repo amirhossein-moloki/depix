@@ -22,7 +22,11 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BuildingBlocks\Infrastructure\BuildingBlocks.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Host\CrmErp.Host\CrmErp.Host.csproj" />
+    <ProjectReference Include="..\..\src\Modules\CRM\Domain\Modules.CRM.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\CRM\Application\Modules.CRM.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\CRM\Infrastructure\Modules.CRM.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Customer\Domain\Modules.Customer.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Customer\Application\Modules.Customer.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Customer\Infrastructure\Modules.Customer.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Domain\Modules.Sales.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Application\Modules.Sales.Application.csproj" />
@@ -30,6 +34,12 @@
     <ProjectReference Include="..\..\src\Modules\Project\Domain\Modules.Project.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Project\Application\Modules.Project.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Project\Infrastructure\Modules.Project.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Finance\Domain\Modules.Finance.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Finance\Application\Modules.Finance.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Finance\Infrastructure\Modules.Finance.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Support\Domain\Modules.Support.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Support\Application\Modules.Support.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Support\Infrastructure\Modules.Support.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
