@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Modules.Support.Application.Services;
 using Modules.Support.Domain.Repositories;
 using Modules.Support.Infrastructure.Persistence.Repositories;
+using Modules.Support.Infrastructure.Services;
 
 namespace Modules.Support.Infrastructure;
 
@@ -11,6 +13,7 @@ public static class DependencyInjection
     {
         services.AddScoped<ISupportPlanRepository, SupportPlanRepository>();
         services.AddScoped<ITicketRepository, TicketRepository>();
+        services.AddScoped<ITicketNumberGenerator, TicketNumberGenerator>();
         return services;
     }
 }
