@@ -14,7 +14,7 @@ namespace IntegrationTests;
 
 public class LeadConversionIntegrationTests
 {
-    private static DbContextOptions<ApplicationDbContext> CreateInMemoryOptions(string dbName)
+    static LeadConversionIntegrationTests()
     {
         _ = Modules.Identity.Domain.AssemblyReference.Assembly;
         _ = Modules.Identity.Infrastructure.AssemblyReference.Assembly;
@@ -32,7 +32,10 @@ public class LeadConversionIntegrationTests
         _ = Modules.Support.Infrastructure.AssemblyReference.Assembly;
         _ = Modules.Platform.Domain.AssemblyReference.Assembly;
         _ = Modules.Platform.Infrastructure.AssemblyReference.Assembly;
+    }
 
+    private static DbContextOptions<ApplicationDbContext> CreateInMemoryOptions(string dbName)
+    {
         return new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: dbName)
             .Options;

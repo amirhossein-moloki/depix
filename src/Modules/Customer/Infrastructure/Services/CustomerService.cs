@@ -34,4 +34,10 @@ public class CustomerService : ICustomerService
     {
         return await _customerRepository.ExistsForCompanyAsync(companyId, cancellationToken);
     }
+
+    public async Task<bool> CustomerExistsAsync(Guid customerId, CancellationToken cancellationToken = default)
+    {
+        var customer = await _customerRepository.GetByIdAsync(customerId, cancellationToken);
+        return customer != null && !customer.IsDeleted && customer.Status != "ARCHIVED";
+    }
 }

@@ -11,6 +11,7 @@ public class ProjectRequirementConfiguration : IEntityTypeConfiguration<ProjectR
         builder.ToTable("project_requirements");
 
         builder.HasKey(pr => pr.Id);
+        builder.Property(pr => pr.Id).ValueGeneratedNever();
 
         builder.HasIndex(pr => pr.ProjectId).IsUnique();
     }
