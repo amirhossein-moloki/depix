@@ -11,9 +11,14 @@ public class RepositoryConfiguration : IEntityTypeConfiguration<RepositoryEntity
         builder.ToTable("repositories");
 
         builder.HasKey(r => r.Id);
+        builder.Property(r => r.Id).ValueGeneratedNever();
 
         builder.Property(r => r.Type).HasMaxLength(50);
         builder.Property(r => r.Url).HasMaxLength(500).IsRequired();
+        builder.Property(r => r.Name).HasMaxLength(100);
         builder.Property(r => r.Branch).HasMaxLength(100);
+        builder.Property(r => r.Description).HasMaxLength(500);
+
+        builder.HasIndex(r => r.ProjectId);
     }
 }

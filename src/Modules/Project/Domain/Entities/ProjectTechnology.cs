@@ -13,11 +13,17 @@ public class ProjectTechnology : Entity
 
     private ProjectTechnology() { }
 
-    public ProjectTechnology(Guid projectId, Guid technologyId, string version, string notes) : base(Guid.NewGuid())
+    public ProjectTechnology(Guid projectId, Guid technologyId, string? version, string? notes) : base(Guid.NewGuid())
     {
         ProjectId = projectId;
         TechnologyId = technologyId;
-        Version = version;
-        Notes = notes;
+        Version = version?.Trim() ?? string.Empty;
+        Notes = notes?.Trim() ?? string.Empty;
+    }
+
+    public void Update(string? version, string? notes)
+    {
+        Version = version?.Trim() ?? string.Empty;
+        Notes = notes?.Trim() ?? string.Empty;
     }
 }

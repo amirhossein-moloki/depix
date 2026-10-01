@@ -16,6 +16,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Moq" Version="4.20.70" />
+    <PackageReference Include="NSubstitute" Version="5.1.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,7 +32,9 @@
     <ProjectReference Include="..\..\src\Modules\Customer\Domain\Modules.Customer.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Customer\Application\Modules.Customer.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Customer\Infrastructure\Modules.Customer.Infrastructure.csproj" />
-    <PackageReference Include="NSubstitute" Version="5.1.0" />
+    <ProjectReference Include="..\..\src\Modules\Project\Domain\Modules.Project.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Project\Application\Modules.Project.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Project\Infrastructure\Modules.Project.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Finance\Domain\Modules.Finance.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Identity\Infrastructure\Modules.Identity.Infrastructure.csproj" />
   </ItemGroup>

@@ -21,8 +21,22 @@ public class ProjectRequirement : Entity
         TargetAudience = targetAudience;
     }
 
-    public static ProjectRequirement Create(Guid projectId, string businessGoal, string features, string technologyNotes, string targetAudience)
+    public static ProjectRequirement Create(Guid projectId, string? businessGoal, string? features, string? technologyNotes, string? targetAudience)
     {
-        return new ProjectRequirement(Guid.NewGuid(), projectId, businessGoal, features, technologyNotes, targetAudience);
+        return new ProjectRequirement(
+            Guid.NewGuid(),
+            projectId,
+            businessGoal?.Trim() ?? string.Empty,
+            features?.Trim() ?? string.Empty,
+            technologyNotes?.Trim() ?? string.Empty,
+            targetAudience?.Trim() ?? string.Empty);
+    }
+
+    public void Update(string? businessGoal, string? features, string? technologyNotes, string? targetAudience)
+    {
+        BusinessGoal = businessGoal?.Trim() ?? string.Empty;
+        Features = features?.Trim() ?? string.Empty;
+        TechnologyNotes = technologyNotes?.Trim() ?? string.Empty;
+        TargetAudience = targetAudience?.Trim() ?? string.Empty;
     }
 }

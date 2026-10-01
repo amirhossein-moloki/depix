@@ -12,6 +12,14 @@ public class ProjectConfiguration : IEntityTypeConfiguration<ProjectEntity>
         builder.ToTable("projects");
 
         builder.HasKey(p => p.Id);
+        builder.Property(p => p.Id).ValueGeneratedNever();
+
+        builder.Property(p => p.CustomerId).IsRequired();
+        builder.HasIndex(p => p.CustomerId);
+
+        builder.HasIndex(p => p.CompanyId);
+        builder.HasIndex(p => p.OpportunityId);
+        builder.HasIndex(p => p.ProposalId);
 
         builder.Property(p => p.Name).HasMaxLength(200).IsRequired();
         builder.HasIndex(p => p.Name);
@@ -19,6 +27,12 @@ public class ProjectConfiguration : IEntityTypeConfiguration<ProjectEntity>
         builder.Property(p => p.Type).HasMaxLength(50);
         builder.Property(p => p.Status).HasMaxLength(50).IsRequired();
         builder.HasIndex(p => p.Status);
+
+        builder.Property(p => p.Description).HasMaxLength(2000);
+        builder.Property(p => p.Notes).HasMaxLength(2000);
+
+        builder.HasIndex(p => p.PlannedDeliveryDate);
+        builder.HasIndex(p => p.CreatedAt);
 
         builder.HasOne(p => p.Requirement)
             .WithOne()

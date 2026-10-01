@@ -27,6 +27,9 @@
     <ProjectReference Include="..\..\src\Modules\Sales\Domain\Modules.Sales.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Application\Modules.Sales.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Infrastructure\Modules.Sales.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Project\Domain\Modules.Project.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Project\Application\Modules.Project.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Project\Infrastructure\Modules.Project.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
