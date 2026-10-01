@@ -5,7 +5,7 @@
   "main": "server.ts",
   "scripts": {
     "start": "ts-node server.ts",
-    "test": "node --test tests/**/*.spec.ts"
+    "test": "ts-node tests/integration.spec.ts && ts-node tests/security.spec.ts"
   },
   "dependencies": {
     "express": "^4.19.2"

@@ -80,13 +80,23 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Enter the JWT bearer token obtained from POST /api/auth/login.
+      description: Enter the JWT bearer token obtained from POST /api/auth/login or Medusa customer auth.
     internalApiKey:
       type: apiKey
       in: header
       name: X-Internal-API-Key
       description: Internal Service-to-Service API Key for integration endpoints.
 ```
+
+### Endpoint Security Requirements
+
+| Endpoint Category | Security Requirement | Description |
+| :--- | :--- | :--- |
+| **System & Health** (`/health`, `/api/v1/health`) | `security: []` | Public |
+| **Public Catalog & CMS** (`/api/v1/integration/products/{id}`, CMS public read) | `security: []` | Public |
+| **Customer Commerce & Account** (`/api/v1/commerce/*`, `/api/customer/*`) | `security: [bearerAuth]` | Customer JWT |
+| **Admin APIs** (`/api/auth/*`, `/api/sales/*`, `/api/crm/*`, `/api/project/*`, `/api/finance/*`, `/api/support/*`, `/api/platform/*`) | `security: [bearerAuth]` | Admin/Staff JWT + Permission Claim |
+| **Integration Mutations** (`/api/v1/integration/products/{id}/sync`, `/api/v1/integration/webhooks`) | `security: [internalApiKey]` | Service `X-Internal-API-Key` |
 
 ---
 
