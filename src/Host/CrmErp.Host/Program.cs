@@ -108,17 +108,59 @@ builder.Services.AddPlatformInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Depix API",
+        Version = "1.0.0",
+        Description = "Unified API for Depix Commerce, CMS, and CRM/ERP Operations"
+    });
+
+    c.AddSecurityDefinition("bearerAuth", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "bearerAuth"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
 app.UseCorrelationId();
 app.UseUnifiedExceptionHandler();
 
-if (app.Environment.IsDevelopment())
+var openApiEnabled = builder.Configuration.GetValue<bool>("OPENAPI_ENABLED", true);
+if (app.Environment.IsDevelopment() || openApiEnabled)
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwagger(c =>
+    {
+        c.RouteTemplate = "swagger/{documentName}/swagger.json";
+    });
+
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Depix API v1");
+        c.RoutePrefix = "api/docs";
+    });
 }
 
 app.UseHttpsRedirection();
@@ -130,6 +172,12 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHealthChecks("/health");
+app.MapGet("/api/v1/health", () => Results.Ok(new { Status = "Healthy", System = "Depix API", Timestamp = DateTime.UtcNow }));
+
+app.MapGet("/api/openapi.json", (HttpContext context) =>
+{
+    context.Response.Redirect("/swagger/v1/swagger.json", permanent: false);
+});
 
 app.MapGet("/", () => Results.Ok(new
 {
