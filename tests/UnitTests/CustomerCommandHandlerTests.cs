@@ -66,6 +66,56 @@ public class CustomerCommandHandlerTests
     }
 
     [Fact]
+    public async Task ChangeCustomerStatus_WhenValid_ShouldUpdateStatusAndSave()
+    {
+        var customer = Customer.Create(Guid.NewGuid(), "CUST-1001");
+        var command = new ChangeCustomerStatusCommand(customer.Id, "SUSPENDED");
+        var handler = new ChangeCustomerStatusCommandHandler(_customerRepository, _unitOfWork);
+
+        _customerRepository.GetByIdAsync(customer.Id, Arg.Any<CancellationToken>()).Returns(customer);
+
+        var result = await handler.HandleAsync(command);
+
+        Assert.Equal("SUSPENDED", result.Status);
+        _customerRepository.Received(1).Update(customer);
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SetPrimaryContact_WhenValid_ShouldUpdatePrimaryContactAndSave()
+    {
+        var customer = Customer.Create(Guid.NewGuid(), "CUST-1001");
+        var newContactId = Guid.NewGuid();
+        var command = new SetPrimaryContactCommand(customer.Id, newContactId);
+        var handler = new SetPrimaryContactCommandHandler(_customerRepository, _unitOfWork);
+
+        _customerRepository.GetByIdAsync(customer.Id, Arg.Any<CancellationToken>()).Returns(customer);
+
+        var result = await handler.HandleAsync(command);
+
+        Assert.Equal(newContactId, result.PrimaryContactId);
+        _customerRepository.Received(1).Update(customer);
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AssignAccountManager_WhenValid_ShouldAssignManagerAndSave()
+    {
+        var customer = Customer.Create(Guid.NewGuid(), "CUST-1001");
+        var accountManagerId = Guid.NewGuid();
+        var command = new AssignAccountManagerCommand(customer.Id, accountManagerId);
+        var handler = new AssignAccountManagerCommandHandler(_customerRepository, _unitOfWork);
+
+        _customerRepository.GetByIdAsync(customer.Id, Arg.Any<CancellationToken>()).Returns(customer);
+
+        var result = await handler.HandleAsync(command);
+
+        Assert.Equal(accountManagerId, result.AssignedTo);
+        _customerRepository.Received(1).Update(customer);
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task AssignCustomer_WhenValid_ShouldAssignUser()
     {
         var customer = Customer.Create(Guid.NewGuid(), "CUST-1001");

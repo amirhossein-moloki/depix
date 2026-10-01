@@ -57,7 +57,21 @@ public class CustomerDomainTests
 
         Assert.Equal(newContactId, customer.PrimaryContactId);
         Assert.Equal("Updated notes", customer.Notes);
+        Assert.Contains(customer.DomainEvents, e => e is CustomerPrimaryContactChangedEvent p && p.PrimaryContactId == newContactId);
         Assert.Contains(customer.DomainEvents, e => e is CustomerUpdatedEvent u && u.CustomerId == customer.Id);
+    }
+
+    [Fact]
+    public void SetPrimaryContact_WhenContactChanged_ShouldUpdateAndRaiseEvents()
+    {
+        var customer = Customer.Create(Guid.NewGuid(), "CUST-001");
+        customer.ClearDomainEvents();
+
+        var newContactId = Guid.NewGuid();
+        customer.SetPrimaryContact(newContactId);
+
+        Assert.Equal(newContactId, customer.PrimaryContactId);
+        Assert.Contains(customer.DomainEvents, e => e is CustomerPrimaryContactChangedEvent p && p.PrimaryContactId == newContactId);
     }
 
     [Fact]
@@ -74,12 +88,24 @@ public class CustomerDomainTests
     }
 
     [Fact]
-    public void UpdateStatus_WithValidStatus_ShouldUpdateStatus()
+    public void Activate_Deactivate_Suspend_ShouldUpdateStatusAndRaiseStatusChangedEvent()
     {
         var customer = Customer.Create(Guid.NewGuid(), "CUST-001");
-        customer.UpdateStatus("INACTIVE");
+        customer.ClearDomainEvents();
 
+        customer.Deactivate();
         Assert.Equal("INACTIVE", customer.Status);
+        Assert.Contains(customer.DomainEvents, e => e is CustomerStatusChangedEvent s && s.NewStatus == "INACTIVE");
+
+        customer.ClearDomainEvents();
+        customer.Suspend();
+        Assert.Equal("SUSPENDED", customer.Status);
+        Assert.Contains(customer.DomainEvents, e => e is CustomerStatusChangedEvent s && s.NewStatus == "SUSPENDED");
+
+        customer.ClearDomainEvents();
+        customer.Activate();
+        Assert.Equal("ACTIVE", customer.Status);
+        Assert.Contains(customer.DomainEvents, e => e is CustomerStatusChangedEvent s && s.NewStatus == "ACTIVE");
     }
 
     [Fact]
@@ -103,6 +129,7 @@ public class CustomerDomainTests
         Assert.Equal(archivedBy, customer.DeletedBy);
         Assert.NotNull(customer.DeletedAt);
         Assert.Contains(customer.DomainEvents, e => e is CustomerArchivedEvent a && a.ArchivedBy == archivedBy);
+        Assert.Contains(customer.DomainEvents, e => e is CustomerStatusChangedEvent s && s.NewStatus == "ARCHIVED");
     }
 
     [Fact]
@@ -119,5 +146,6 @@ public class CustomerDomainTests
         Assert.Null(customer.DeletedBy);
         Assert.Null(customer.DeletedAt);
         Assert.Contains(customer.DomainEvents, e => e is CustomerReactivatedEvent);
+        Assert.Contains(customer.DomainEvents, e => e is CustomerStatusChangedEvent s && s.NewStatus == "ACTIVE");
     }
 }
