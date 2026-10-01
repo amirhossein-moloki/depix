@@ -20,6 +20,9 @@ public class CustomersController : ControllerBase
     private readonly ICommandHandler<CreateCustomerCommand, CustomerDto> _createCustomerHandler;
     private readonly ICommandHandler<UpdateCustomerCommand, CustomerDto> _updateCustomerHandler;
     private readonly ICommandHandler<AssignCustomerCommand, CustomerDto> _assignCustomerHandler;
+    private readonly ICommandHandler<ChangeCustomerStatusCommand, CustomerDto> _changeStatusHandler;
+    private readonly ICommandHandler<SetPrimaryContactCommand, CustomerDto> _setPrimaryContactHandler;
+    private readonly ICommandHandler<AssignAccountManagerCommand, CustomerDto> _assignAccountManagerHandler;
     private readonly ICommandHandler<ArchiveCustomerCommand> _archiveCustomerHandler;
     private readonly ICommandHandler<ReactivateCustomerCommand, CustomerDto> _reactivateCustomerHandler;
 
@@ -31,11 +34,17 @@ public class CustomersController : ControllerBase
     private readonly IValidator<CreateCustomerCommand> _createValidator;
     private readonly IValidator<UpdateCustomerCommand> _updateValidator;
     private readonly IValidator<AssignCustomerCommand> _assignValidator;
+    private readonly IValidator<ChangeCustomerStatusCommand> _changeStatusValidator;
+    private readonly IValidator<SetPrimaryContactCommand> _setPrimaryContactValidator;
+    private readonly IValidator<AssignAccountManagerCommand> _assignAccountManagerValidator;
 
     public CustomersController(
         ICommandHandler<CreateCustomerCommand, CustomerDto> createCustomerHandler,
         ICommandHandler<UpdateCustomerCommand, CustomerDto> updateCustomerHandler,
         ICommandHandler<AssignCustomerCommand, CustomerDto> assignCustomerHandler,
+        ICommandHandler<ChangeCustomerStatusCommand, CustomerDto> changeStatusHandler,
+        ICommandHandler<SetPrimaryContactCommand, CustomerDto> setPrimaryContactHandler,
+        ICommandHandler<AssignAccountManagerCommand, CustomerDto> assignAccountManagerHandler,
         ICommandHandler<ArchiveCustomerCommand> archiveCustomerHandler,
         ICommandHandler<ReactivateCustomerCommand, CustomerDto> reactivateCustomerHandler,
         IQueryHandler<GetCustomerByIdQuery, CustomerDetailDto> getCustomerByIdHandler,
@@ -44,11 +53,17 @@ public class CustomersController : ControllerBase
         IQueryHandler<GetCustomerContactsQuery, List<CustomerContactContractDto>> getCustomerContactsHandler,
         IValidator<CreateCustomerCommand> createValidator,
         IValidator<UpdateCustomerCommand> updateValidator,
-        IValidator<AssignCustomerCommand> assignValidator)
+        IValidator<AssignCustomerCommand> assignValidator,
+        IValidator<ChangeCustomerStatusCommand> changeStatusValidator,
+        IValidator<SetPrimaryContactCommand> setPrimaryContactValidator,
+        IValidator<AssignAccountManagerCommand> assignAccountManagerValidator)
     {
         _createCustomerHandler = createCustomerHandler;
         _updateCustomerHandler = updateCustomerHandler;
         _assignCustomerHandler = assignCustomerHandler;
+        _changeStatusHandler = changeStatusHandler;
+        _setPrimaryContactHandler = setPrimaryContactHandler;
+        _assignAccountManagerHandler = assignAccountManagerHandler;
         _archiveCustomerHandler = archiveCustomerHandler;
         _reactivateCustomerHandler = reactivateCustomerHandler;
         _getCustomerByIdHandler = getCustomerByIdHandler;
@@ -58,6 +73,9 @@ public class CustomersController : ControllerBase
         _createValidator = createValidator;
         _updateValidator = updateValidator;
         _assignValidator = assignValidator;
+        _changeStatusValidator = changeStatusValidator;
+        _setPrimaryContactValidator = setPrimaryContactValidator;
+        _assignAccountManagerValidator = assignAccountManagerValidator;
     }
 
     [HttpPost]
@@ -149,6 +167,57 @@ public class CustomersController : ControllerBase
 
         var customer = await _updateCustomerHandler.HandleAsync(command, cancellationToken);
         return Ok(ResponseFactory.Success(customer, "Customer updated successfully."));
+    }
+
+    [HttpPost("{id:guid}/status")]
+    [Authorize(Policy = "Customer.StatusChange")]
+    public async Task<IActionResult> ChangeCustomerStatus(Guid id, [FromBody] ChangeCustomerStatusRequest request, CancellationToken cancellationToken)
+    {
+        var command = new ChangeCustomerStatusCommand(id, request.Status);
+
+        var validationResult = await _changeStatusValidator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(e => new ValidationErrorDetail(e.PropertyName, e.ErrorMessage)).ToList();
+            throw new BuildingBlocks.Common.Exceptions.ValidationException("Customer status change validation failed.", errors);
+        }
+
+        var customer = await _changeStatusHandler.HandleAsync(command, cancellationToken);
+        return Ok(ResponseFactory.Success(customer, "Customer status updated successfully."));
+    }
+
+    [HttpPost("{id:guid}/primary-contact")]
+    [Authorize(Policy = "Customer.Update")]
+    public async Task<IActionResult> SetPrimaryContact(Guid id, [FromBody] SetPrimaryContactRequest request, CancellationToken cancellationToken)
+    {
+        var command = new SetPrimaryContactCommand(id, request.PrimaryContactId);
+
+        var validationResult = await _setPrimaryContactValidator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(e => new ValidationErrorDetail(e.PropertyName, e.ErrorMessage)).ToList();
+            throw new BuildingBlocks.Common.Exceptions.ValidationException("Customer primary contact update validation failed.", errors);
+        }
+
+        var customer = await _setPrimaryContactHandler.HandleAsync(command, cancellationToken);
+        return Ok(ResponseFactory.Success(customer, "Customer primary contact updated successfully."));
+    }
+
+    [HttpPost("{id:guid}/account-manager")]
+    [Authorize(Policy = "Customer.Assign")]
+    public async Task<IActionResult> AssignAccountManager(Guid id, [FromBody] AssignAccountManagerRequest request, CancellationToken cancellationToken)
+    {
+        var command = new AssignAccountManagerCommand(id, request.AccountManagerId);
+
+        var validationResult = await _assignAccountManagerValidator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(e => new ValidationErrorDetail(e.PropertyName, e.ErrorMessage)).ToList();
+            throw new BuildingBlocks.Common.Exceptions.ValidationException("Customer account manager assignment validation failed.", errors);
+        }
+
+        var customer = await _assignAccountManagerHandler.HandleAsync(command, cancellationToken);
+        return Ok(ResponseFactory.Success(customer, "Customer account manager assigned successfully."));
     }
 
     [HttpPost("{id:guid}/assign")]

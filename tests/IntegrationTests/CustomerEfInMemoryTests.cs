@@ -37,6 +37,25 @@ public class CustomerEfInMemoryTests
         Assert.NotNull(retrievedByNumber);
         Assert.Equal(companyId2, retrievedByNumber.CompanyId);
 
+        // Status change to SUSPENDED
+        retrievedByNumber.Suspend();
+        repository.Update(retrievedByNumber);
+        await dbContext.SaveChangesAsync();
+
+        var suspendedCustomer = await repository.GetByIdAsync(retrievedByNumber.Id);
+        Assert.NotNull(suspendedCustomer);
+        Assert.Equal("SUSPENDED", suspendedCustomer.Status);
+
+        // Primary Contact update
+        var primaryContactId = Guid.NewGuid();
+        retrievedByNumber.SetPrimaryContact(primaryContactId);
+        repository.Update(retrievedByNumber);
+        await dbContext.SaveChangesAsync();
+
+        var updatedContactCustomer = await repository.GetByIdAsync(retrievedByNumber.Id);
+        Assert.NotNull(updatedContactCustomer);
+        Assert.Equal(primaryContactId, updatedContactCustomer.PrimaryContactId);
+
         // Paged Search
         var (items, count) = await repository.GetPagedAsync(1, 10, search: "alpha");
         Assert.Equal(1, count);

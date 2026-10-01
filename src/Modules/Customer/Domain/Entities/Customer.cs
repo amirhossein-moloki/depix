@@ -76,14 +76,21 @@ public class Customer : AuditableAggregateRoot, ISoftDelete
         Guid? primaryContactId,
         string? notes)
     {
-        PrimaryContactId = primaryContactId;
+        if (PrimaryContactId != primaryContactId)
+        {
+            SetPrimaryContact(primaryContactId);
+        }
+
         Notes = notes;
         AddDomainEvent(new CustomerUpdatedEvent(Id));
     }
 
     public void SetPrimaryContact(Guid? contactId)
     {
+        if (PrimaryContactId == contactId) return;
+
         PrimaryContactId = contactId;
+        AddDomainEvent(new CustomerPrimaryContactChangedEvent(Id, contactId));
         AddDomainEvent(new CustomerUpdatedEvent(Id));
     }
 
@@ -93,25 +100,56 @@ public class Customer : AuditableAggregateRoot, ISoftDelete
         AddDomainEvent(new CustomerAssignedEvent(Id, assignedTo));
     }
 
+    public void Activate()
+    {
+        UpdateStatus("ACTIVE");
+    }
+
+    public void Deactivate()
+    {
+        UpdateStatus("INACTIVE");
+    }
+
+    public void Suspend()
+    {
+        UpdateStatus("SUSPENDED");
+    }
+
     public void UpdateStatus(string newStatus)
     {
         if (string.IsNullOrWhiteSpace(newStatus))
             throw new ArgumentException("Status cannot be empty.", nameof(newStatus));
 
         var normalized = newStatus.Trim().ToUpperInvariant();
-        if (normalized != "ACTIVE" && normalized != "INACTIVE" && normalized != "ARCHIVED")
-            throw new ArgumentException($"Invalid status '{newStatus}'. Allowed values are ACTIVE, INACTIVE, ARCHIVED.", nameof(newStatus));
+        if (normalized != "ACTIVE" && normalized != "INACTIVE" && normalized != "SUSPENDED" && normalized != "ARCHIVED")
+            throw new ArgumentException($"Invalid status '{newStatus}'. Allowed values are ACTIVE, INACTIVE, SUSPENDED, ARCHIVED.", nameof(newStatus));
 
+        if (Status == normalized) return;
+
+        var previousStatus = Status;
         Status = normalized;
+
+        if (normalized == "ARCHIVED")
+        {
+            SoftDelete(null);
+        }
+        else if (IsDeleted)
+        {
+            UndoSoftDelete();
+        }
+
+        AddDomainEvent(new CustomerStatusChangedEvent(Id, previousStatus, normalized));
         AddDomainEvent(new CustomerUpdatedEvent(Id));
     }
 
     public void Archive(Guid? archivedBy = null)
     {
-        if (IsDeleted) return;
+        if (IsDeleted && Status == "ARCHIVED") return;
 
+        var previousStatus = Status;
         Status = "ARCHIVED";
         SoftDelete(archivedBy);
+        AddDomainEvent(new CustomerStatusChangedEvent(Id, previousStatus, "ARCHIVED"));
         AddDomainEvent(new CustomerArchivedEvent(Id, archivedBy));
     }
 
@@ -119,8 +157,10 @@ public class Customer : AuditableAggregateRoot, ISoftDelete
     {
         if (!IsDeleted && Status == "ACTIVE") return;
 
+        var previousStatus = Status;
         UndoSoftDelete();
         Status = "ACTIVE";
+        AddDomainEvent(new CustomerStatusChangedEvent(Id, previousStatus, "ACTIVE"));
         AddDomainEvent(new CustomerReactivatedEvent(Id));
     }
 

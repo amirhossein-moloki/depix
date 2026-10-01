@@ -57,7 +57,22 @@ public record UpdateCustomerRequest
     public string? Status { get; init; }
 }
 
+public record ChangeCustomerStatusRequest
+{
+    public string Status { get; init; } = string.Empty;
+}
+
+public record SetPrimaryContactRequest
+{
+    public Guid? PrimaryContactId { get; init; }
+}
+
 public record AssignCustomerRequest
 {
     public Guid? AssignedTo { get; init; }
+}
+
+public record AssignAccountManagerRequest
+{
+    public Guid? AccountManagerId { get; init; }
 }

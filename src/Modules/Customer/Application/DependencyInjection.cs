@@ -18,6 +18,9 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<CreateCustomerCommand, CustomerDto>, CreateCustomerCommandHandler>();
         services.AddScoped<ICommandHandler<UpdateCustomerCommand, CustomerDto>, UpdateCustomerCommandHandler>();
         services.AddScoped<ICommandHandler<AssignCustomerCommand, CustomerDto>, AssignCustomerCommandHandler>();
+        services.AddScoped<ICommandHandler<ChangeCustomerStatusCommand, CustomerDto>, ChangeCustomerStatusCommandHandler>();
+        services.AddScoped<ICommandHandler<SetPrimaryContactCommand, CustomerDto>, SetPrimaryContactCommandHandler>();
+        services.AddScoped<ICommandHandler<AssignAccountManagerCommand, CustomerDto>, AssignAccountManagerCommandHandler>();
         services.AddScoped<ICommandHandler<ArchiveCustomerCommand>, ArchiveCustomerCommandHandler>();
         services.AddScoped<ICommandHandler<ReactivateCustomerCommand, CustomerDto>, ReactivateCustomerCommandHandler>();
 
@@ -30,6 +33,9 @@ public static class DependencyInjection
         services.AddScoped<IValidator<CreateCustomerCommand>, CreateCustomerCommandValidator>();
         services.AddScoped<IValidator<UpdateCustomerCommand>, UpdateCustomerCommandValidator>();
         services.AddScoped<IValidator<AssignCustomerCommand>, AssignCustomerCommandValidator>();
+        services.AddScoped<IValidator<ChangeCustomerStatusCommand>, ChangeCustomerStatusCommandValidator>();
+        services.AddScoped<IValidator<SetPrimaryContactCommand>, SetPrimaryContactCommandValidator>();
+        services.AddScoped<IValidator<AssignAccountManagerCommand>, AssignAccountManagerCommandValidator>();
 
         return services;
     }
