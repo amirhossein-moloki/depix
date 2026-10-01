@@ -1,10 +1,22 @@
-## Ignore Visual Studio / .NET build artifacts
-**/bin/
-**/obj/
-*.user
-*.userosscache
-*.sln.docstates
+# ==========================================
+# Build and Output Exclusions
+# ==========================================
+bin/
+obj/
+dist/
+build/
+out/
+node_modules/
+**/node_modules/
+
+# IDE & Editor files
 .vs/
-.idea/
 .vscode/
+.idea/
 *.suo
+*.user
+
+# Logs and databases
+*.log
+*.sqlite
+*.db

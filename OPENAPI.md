@@ -71,7 +71,7 @@ servers:
 
 ## 5. Security & Authentication Schemes
 
-The unified API standardizes on JWT Bearer Token authentication:
+The unified API standardizes on JWT Bearer Token authentication for user endpoints and Internal API Keys for service-to-service integration:
 
 ```yaml
 components:
@@ -81,6 +81,11 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: Enter the JWT bearer token obtained from POST /api/auth/login.
+    internalApiKey:
+      type: apiKey
+      in: header
+      name: X-Internal-API-Key
+      description: Internal Service-to-Service API Key for integration endpoints.
 ```
 
 ---
@@ -153,23 +158,22 @@ ApiError:
 ### Integration Contract Endpoints
 
 #### `GET /api/v1/integration/products/{productId}`
-- **Status**: `PLANNED`
+- **Status**: `IMPLEMENTED`
 - **Summary**: Retrieves merged product details combining Medusa commerce pricing/stock with Payload rich content.
 
 #### `GET /api/v1/integration/products/{productId}/content`
-- **Status**: `PLANNED`
+- **Status**: `IMPLEMENTED`
 - **Summary**: Fetches CMS content associated with a given Medusa product ID (`medusa_product_id`).
 
 #### `POST /api/v1/integration/products/{productId}/sync`
-- **Status**: `PLANNED`
+- **Status**: `IMPLEMENTED`
 - **Summary**: Triggers catalog synchronization between Medusa commerce events and Payload CMS content caches.
+- **Security**: Requires `X-Internal-API-Key` header.
 
-### Webhooks & Synchronization
-- **Events**:
-  - `commerce.product.created` / `commerce.product.updated` (Medusa -> Integration -> Payload)
-  - `cms.page.published` / `cms.article.updated` (Payload -> Integration -> Medusa)
-- **Retry Policy**: Exponential backoff with maximum 5 retries.
-- **Idempotency**: Webhook headers include `X-Webhook-Signature` and unique `X-Event-ID`.
+#### `POST /api/v1/integration/webhooks`
+- **Status**: `IMPLEMENTED`
+- **Summary**: Receives webhook events from Medusa and Payload to execute asynchronous catalog synchronization.
+- **Security**: Requires `X-Internal-API-Key` header.
 
 ---
 
@@ -188,7 +192,7 @@ ApiError:
 | **Platform** | File Storage, Operational Tasks, Audit Logging | `IMPLEMENTED` |
 | **Commerce** | `/api/v1/commerce/products`, `/cart`, `/orders`, `/payments`, `/inventory` | `PLANNED` |
 | **CMS** | `/api/v1/cms/pages`, `/articles`, `/authors`, `/media`, `/seo` | `PLANNED` |
-| **Integration** | `/api/v1/integration/products/{id}`, `/sync`, `/webhooks` | `PLANNED` |
+| **Integration** | `/api/v1/integration/products/{id}`, `/sync`, `/webhooks` | `IMPLEMENTED` |
 
 ---
 

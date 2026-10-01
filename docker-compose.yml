@@ -1,6 +1,19 @@
 version: '3.8'
 
 services:
+  nginx:
+    image: nginx:alpine
+    container_name: depix-gateway
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+      - integration
+    networks:
+      - depix-network
+
   postgres:
     image: postgres:16-alpine
     container_name: crmerp-postgres
@@ -17,6 +30,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - depix-network
 
   api:
     build:
@@ -26,11 +41,32 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Database=Host=postgres;Port=5432;Database=crm_erp_db;Username=postgres;Password=postgrespassword
-    ports:
-      - "8080:8080"
+      - MEDUSA_INTERNAL_URL=http://medusa:9000
+      - PAYLOAD_INTERNAL_URL=http://payload:3000
+      - INTEGRATION_INTERNAL_URL=http://integration:3001
+      - INTEGRATION_INTERNAL_API_KEY=your_integration_internal_api_key_placeholder
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - depix-network
+
+  integration:
+    build:
+      context: ./infrastructure/integration
+      dockerfile: Dockerfile
+    container_name: depix-integration
+    environment:
+      - PORT=3001
+      - MEDUSA_INTERNAL_URL=http://medusa:9000
+      - PAYLOAD_INTERNAL_URL=http://payload:3000
+      - INTEGRATION_INTERNAL_API_KEY=your_integration_internal_api_key_placeholder
+    networks:
+      - depix-network
+
+networks:
+  depix-network:
+    driver: bridge
 
 volumes:
   postgres_data:
