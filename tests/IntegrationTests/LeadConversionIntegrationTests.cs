@@ -16,13 +16,21 @@ public class LeadConversionIntegrationTests
 {
     private static DbContextOptions<ApplicationDbContext> CreateInMemoryOptions(string dbName)
     {
+        _ = Modules.Identity.Domain.AssemblyReference.Assembly;
         _ = Modules.Identity.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.CRM.Domain.AssemblyReference.Assembly;
         _ = Modules.CRM.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Sales.Domain.AssemblyReference.Assembly;
         _ = Modules.Sales.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Customer.Domain.AssemblyReference.Assembly;
         _ = Modules.Customer.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Project.Domain.AssemblyReference.Assembly;
         _ = Modules.Project.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Finance.Domain.AssemblyReference.Assembly;
         _ = Modules.Finance.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Support.Domain.AssemblyReference.Assembly;
         _ = Modules.Support.Infrastructure.AssemblyReference.Assembly;
+        _ = Modules.Platform.Domain.AssemblyReference.Assembly;
         _ = Modules.Platform.Infrastructure.AssemblyReference.Assembly;
 
         return new DbContextOptionsBuilder<ApplicationDbContext>()
