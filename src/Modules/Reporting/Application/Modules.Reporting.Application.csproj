@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Domain\Modules.Reporting.Domain.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Application\BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Common\BuildingBlocks.Common.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\SharedKernel\BuildingBlocks.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\CRM\Domain\Modules.CRM.Domain.csproj" />
+    <ProjectReference Include="..\..\Sales\Domain\Modules.Sales.Domain.csproj" />
+    <ProjectReference Include="..\..\Customer\Domain\Modules.Customer.Domain.csproj" />
+    <ProjectReference Include="..\..\Project\Domain\Modules.Project.Domain.csproj" />
+    <ProjectReference Include="..\..\Finance\Domain\Modules.Finance.Domain.csproj" />
+    <ProjectReference Include="..\..\Support\Domain\Modules.Support.Domain.csproj" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

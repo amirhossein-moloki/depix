@@ -19,6 +19,8 @@ using Modules.Platform.API;
 using Modules.Platform.Infrastructure;
 using Modules.Project.API;
 using Modules.Project.Infrastructure;
+using Modules.Reporting.API;
+using Modules.Reporting.Infrastructure;
 using Modules.Sales.API;
 using Modules.Sales.Infrastructure;
 using Modules.Support.API;
@@ -35,6 +37,7 @@ _ = Modules.Project.Infrastructure.AssemblyReference.Assembly;
 _ = Modules.Finance.Infrastructure.AssemblyReference.Assembly;
 _ = Modules.Support.Infrastructure.AssemblyReference.Assembly;
 _ = Modules.Platform.Infrastructure.AssemblyReference.Assembly;
+_ = Modules.Reporting.Infrastructure.AssemblyReference.Assembly;
 
 // Add Building Blocks
 builder.Services.AddBuildingBlocksCommon();
@@ -105,6 +108,9 @@ builder.Services.AddSupportInfrastructure(builder.Configuration);
 
 builder.Services.AddPlatformApi(builder.Configuration);
 builder.Services.AddPlatformInfrastructure(builder.Configuration);
+
+builder.Services.AddReportingApi(builder.Configuration);
+builder.Services.AddReportingInfrastructure(builder.Configuration);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

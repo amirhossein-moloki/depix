@@ -124,6 +124,19 @@
   <Folder Name="/src/Modules/Support/Infrastructure/">
     <Project Path="src/Modules/Support/Infrastructure/Modules.Support.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Reporting/" />
+  <Folder Name="/src/Modules/Reporting/API/">
+    <Project Path="src/Modules/Reporting/API/Modules.Reporting.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Reporting/Application/">
+    <Project Path="src/Modules/Reporting/Application/Modules.Reporting.Application.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Reporting/Domain/">
+    <Project Path="src/Modules/Reporting/Domain/Modules.Reporting.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Reporting/Infrastructure/">
+    <Project Path="src/Modules/Reporting/Infrastructure/Modules.Reporting.Infrastructure.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CrmErp.ArchitectureTests/CrmErp.ArchitectureTests.csproj" />
     <Project Path="tests/Modules.Identity.Tests/Modules.Identity.Tests.csproj" />

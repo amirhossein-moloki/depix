@@ -34,6 +34,8 @@
     <ProjectReference Include="..\..\Modules\Support\Infrastructure\Modules.Support.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Modules\Platform\API\Modules.Platform.API.csproj" />
     <ProjectReference Include="..\..\Modules\Platform\Infrastructure\Modules.Platform.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Modules\Reporting\API\Modules.Reporting.API.csproj" />
+    <ProjectReference Include="..\..\Modules\Reporting\Infrastructure\Modules.Reporting.Infrastructure.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\Common\BuildingBlocks.Common.csproj" />
     <ProjectReference Include="..\..\BuildingBlocks\Infrastructure\BuildingBlocks.Infrastructure.csproj" />
   </ItemGroup>
