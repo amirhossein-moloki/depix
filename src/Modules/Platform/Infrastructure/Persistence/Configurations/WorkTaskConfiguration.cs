@@ -17,5 +17,6 @@ public class WorkTaskConfiguration : IEntityTypeConfiguration<WorkTask>
         builder.Property(t => t.Status).HasMaxLength(50).IsRequired();
 
         builder.HasIndex(t => t.Status);
+        builder.HasIndex(t => t.AssignedTo);
     }
 }

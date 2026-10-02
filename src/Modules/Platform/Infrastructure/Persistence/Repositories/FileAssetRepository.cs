@@ -19,8 +19,21 @@ public class FileAssetRepository : IFileAssetRepository
             .FirstOrDefaultAsync(f => f.Id == id, cancellationToken);
     }
 
+    public async Task<List<FileAsset>> GetByEntityAsync(string entityType, Guid entityId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<FileAsset>()
+            .Where(f => f.EntityType == entityType && f.EntityId == entityId)
+            .OrderByDescending(f => f.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(FileAsset fileAsset, CancellationToken cancellationToken = default)
     {
         await _dbContext.Set<FileAsset>().AddAsync(fileAsset, cancellationToken);
+    }
+
+    public void Update(FileAsset fileAsset)
+    {
+        _dbContext.Set<FileAsset>().Update(fileAsset);
     }
 }
