@@ -45,6 +45,9 @@
     <ProjectReference Include="..\..\src\Modules\Platform\Application\Modules.Platform.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Platform\Infrastructure\Modules.Platform.Infrastructure.csproj" />
     <ProjectReference Include="..\..\src\Modules\Identity\Infrastructure\Modules.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Reporting\Domain\Modules.Reporting.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Reporting\Application\Modules.Reporting.Application.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Reporting/Infrastructure\Modules.Reporting.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
