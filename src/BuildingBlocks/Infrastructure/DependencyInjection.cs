@@ -9,8 +9,16 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddBuildingBlocksInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("Database")
-            ?? "Host=localhost;Database=crm_erp_db;Username=postgres;Password=postgres";
+        var connectionString = configuration.GetConnectionString("Database");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            var env = configuration["ASPNETCORE_ENVIRONMENT"];
+            if (string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("ConnectionStrings:Database configuration is required in Production.");
+            }
+            connectionString = "Host=localhost;Database=crm_erp_db;Username=postgres;Password=postgres";
+        }
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {

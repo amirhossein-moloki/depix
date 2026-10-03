@@ -90,9 +90,31 @@ builder.Services.AddRateLimiter(options =>
 });
 
 // Configure JWT Authentication
-var jwtSecret = builder.Configuration["Jwt:Secret"] ?? throw new InvalidOperationException("Jwt:Secret must be configured in application settings.");
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("Jwt:Issuer must be configured in application settings.");
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("Jwt:Audience must be configured in application settings.");
+var jwtSecret = builder.Configuration["Jwt:Secret"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"];
+var jwtAudience = builder.Configuration["Jwt:Audience"];
+
+if (builder.Environment.IsProduction())
+{
+    if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
+    {
+        throw new InvalidOperationException("Jwt:Secret must be configured and be at least 32 characters long in Production.");
+    }
+    if (string.IsNullOrWhiteSpace(jwtIssuer))
+    {
+        throw new InvalidOperationException("Jwt:Issuer must be configured in Production.");
+    }
+    if (string.IsNullOrWhiteSpace(jwtAudience))
+    {
+        throw new InvalidOperationException("Jwt:Audience must be configured in Production.");
+    }
+}
+else
+{
+    jwtSecret ??= "Development_Placeholder_Jwt_Secret_Key_Change_In_Production_32_Bytes!";
+    jwtIssuer ??= "CrmErpApi";
+    jwtAudience ??= "CrmErpClients";
+}
 
 builder.Services.AddAuthentication(options =>
 {

@@ -15,8 +15,16 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = configuration.GetConnectionString("Database")
-            ?? "Host=localhost;Database=crm_erp_db;Username=postgres;Password=postgres";
+        var connectionString = configuration.GetConnectionString("Database");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            var env = configuration["ASPNETCORE_ENVIRONMENT"];
+            if (string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("ConnectionStrings:Database configuration is required in Production.");
+            }
+            connectionString = "Host=localhost;Database=crm_erp_db;Username=postgres;Password=postgres";
+        }
 
         // Preload module infrastructure assemblies into AppDomain
         _ = Modules.Identity.Infrastructure.AssemblyReference.Assembly;
