@@ -60,7 +60,7 @@ public class ProposalDomainTests
         var item = proposal.ProposalItems.First();
         proposal.UpdateItem(item.Id, "Item 1 Updated", "Desc updated", 2, Money.Create(600m, "USD"), Money.Create(50m, "USD"));
 
-        Assert.Equal(1, proposal.ProposalItems.Count);
+        Assert.Single(proposal.ProposalItems);
         Assert.Equal(1200m, proposal.Subtotal.Amount);
         Assert.Equal(50m, proposal.Discount.Amount);
         Assert.Equal(1150m, proposal.Total.Amount);

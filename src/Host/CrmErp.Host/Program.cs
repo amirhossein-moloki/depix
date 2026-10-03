@@ -43,6 +43,26 @@ _ = Modules.Reporting.Infrastructure.AssemblyReference.Assembly;
 builder.Services.AddBuildingBlocksCommon();
 builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration);
 
+// Configure CORS Policy
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DefaultCorsPolicy", policy =>
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod()
+                  .AllowCredentials();
+        }
+        else
+        {
+            policy.SetIsOriginAllowed(_ => false);
+        }
+    });
+});
+
 // Add Database Health Check
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ApplicationDbContext>();
@@ -178,6 +198,8 @@ if (app.Environment.IsDevelopment() || openApiEnabled)
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("DefaultCorsPolicy");
 
 app.UseRateLimiter();
 
