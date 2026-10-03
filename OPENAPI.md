@@ -4,7 +4,7 @@
 
 This repository (`depix`) houses the backend infrastructure for the **Depix Platform**.
 
-While the core underlying backend service is implemented as a .NET 8 Modular Monolith CRM/ERP system (`CrmErp`), this specification establishes a **Unified OpenAPI/Swagger Documentation Layer** representing the complete Depix backend architecture, including the integration boundary between Commerce (Medusa), CMS (Payload), and CRM/ERP operational microservices.
+The core underlying backend service is implemented as a .NET 8 Modular Monolith CRM/ERP system (`CrmErp`). This specification establishes the OpenAPI/Swagger Documentation Layer representing the Depix backend architecture.
 
 ---
 
@@ -17,27 +17,19 @@ While the core underlying backend service is implemented as a .NET 8 Modular Mon
                     └──────────┬───────────┘
                                │
                        Unified API Surface
-            ┌──────────────────┼──────────────────┐
-            │                  │                  │
-    /api/v1/commerce/*    /api/v1/cms/*   /api/v1/integration/*
-            │                  │                  │
-     ┌──────▼──────┐    ┌─────▼─────┐    ┌────────▼────────┐
-     │   Medusa    │    │  Payload  │    │ .NET CRM/ERP    │
-     │  Commerce   │    │    CMS    │    │ Modular Monolith│
-     └──────┬──────┘    └─────┬─────┘    └────────┬────────┘
-            │                 │                   │
-            └───────── Integration Boundary ──────┘
+                               │
+                    ┌──────────▼──────────┐
+                    │    .NET CRM/ERP     │
+                    │  Modular Monolith   │
+                    └─────────────────────┘
 ```
 
 The Nginx Reverse Proxy / API Gateway routes incoming requests from the single unified external surface (`http://localhost:8080` or production domain) to internal services:
 
 - `/api/docs` -> Unified Swagger UI Entry Point
-- `/api/openapi.json` -> Raw OpenAPI 3.1.0 / 3.0.0 Specification
-- `/api/v1/commerce/*` -> Medusa Commerce Engine
-- `/api/v1/cms/*` -> Payload CMS Engine
-- `/api/v1/integration/*` -> Commerce ↔ CMS Integration Boundary
+- `/api/openapi.json` -> Raw OpenAPI Specification
 - `/api/v1/health` -> Unified Health Check
-- `/api/auth/*` & `/api/sales/*`, `/api/crm/*`, `/api/customer/*`, `/api/project/*`, `/api/finance/*` -> Core .NET Modular Monolith API
+- `/api/auth/*` & `/api/sales/*`, `/api/crm/*`, `/api/customer/*`, `/api/project/*`, `/api/finance/*`, `/api/support/*`, `/api/platform/*` -> Core .NET Modular Monolith API
 
 ---
 
@@ -47,7 +39,6 @@ The Nginx Reverse Proxy / API Gateway routes incoming requests from the single u
 | :--- | :--- | :--- |
 | **Swagger UI** | `/api/docs` | Interactive Swagger UI documentation |
 | **OpenAPI Spec (JSON)** | `/api/openapi.json` | Raw OpenAPI Specification (JSON) |
-| **OpenAPI Spec (YAML)** | `/api/openapi.yaml` | Raw OpenAPI Specification (YAML) |
 | **Health Endpoint** | `/api/v1/health` | Service & Database Health Status |
 
 ---
@@ -58,7 +49,7 @@ The Nginx Reverse Proxy / API Gateway routes incoming requests from the single u
 openapi: 3.1.0
 info:
   title: Depix API
-  description: Unified API for Depix Commerce, CMS, and CRM/ERP Operations
+  description: Unified API for Depix CRM/ERP Operations
   version: 1.0.0
 servers:
   - url: /
@@ -71,7 +62,7 @@ servers:
 
 ## 5. Security & Authentication Schemes
 
-The unified API standardizes on JWT Bearer Token authentication for user endpoints and Internal API Keys for service-to-service integration:
+The unified API standardizes on JWT Bearer Token authentication for user endpoints:
 
 ```yaml
 components:
@@ -80,12 +71,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Enter the JWT bearer token obtained from POST /api/auth/login or Medusa customer auth.
-    internalApiKey:
-      type: apiKey
-      in: header
-      name: X-Internal-API-Key
-      description: Internal Service-to-Service API Key for integration endpoints.
+      description: Enter the JWT bearer token obtained from POST /api/auth/login.
 ```
 
 ### Endpoint Security Requirements
@@ -93,10 +79,8 @@ components:
 | Endpoint Category | Security Requirement | Description |
 | :--- | :--- | :--- |
 | **System & Health** (`/health`, `/api/v1/health`) | `security: []` | Public |
-| **Public Catalog & CMS** (`/api/v1/integration/products/{id}`, CMS public read) | `security: []` | Public |
-| **Customer Commerce & Account** (`/api/v1/commerce/*`, `/api/customer/*`) | `security: [bearerAuth]` | Customer JWT |
-| **Admin APIs** (`/api/auth/*`, `/api/sales/*`, `/api/crm/*`, `/api/project/*`, `/api/finance/*`, `/api/support/*`, `/api/platform/*`) | `security: [bearerAuth]` | Admin/Staff JWT + Permission Claim |
-| **Integration Mutations** (`/api/v1/integration/products/{id}/sync`, `/api/v1/integration/webhooks`) | `security: [internalApiKey]` | Service `X-Internal-API-Key` |
+| **Auth APIs** (`/api/auth/login`, `/api/auth/refresh`) | `security: []` | Public |
+| **Admin APIs** (`/api/sales/*`, `/api/crm/*`, `/api/customer/*`, `/api/project/*`, `/api/finance/*`, `/api/support/*`, `/api/platform/*`) | `security: [bearerAuth]` | Admin/Staff JWT + Permission Claim |
 
 ---
 
@@ -135,59 +119,9 @@ All API endpoints follow a unified response structure (`ApiResponse<T>`):
 }
 ```
 
-### Unified Error Structure Schema
-```yaml
-ApiError:
-  type: object
-  properties:
-    code:
-      type: string
-      example: VALIDATION_ERROR
-    field:
-      type: string
-      nullable: true
-      example: email
-    message:
-      type: string
-      example: Email is invalid
-```
-
 ---
 
-## 7. Medusa ↔ Payload Integration Boundary
-
-### Relationship & Data Ownership
-- **Medusa Engine**: Primary owner of transaction, inventory, pricing, cart, and order domain objects (`product.id`).
-- **Payload CMS**: Primary owner of content, articles, pages, rich text, media, and marketing copy.
-- **Identifier Boundary**: Payload content documents link directly to Medusa using `medusa_product_id`.
-
-```text
-  Medusa Product (product.id) <──── [medusa_product_id] ──── Payload CMS Page / Content
-```
-
-### Integration Contract Endpoints
-
-#### `GET /api/v1/integration/products/{productId}`
-- **Status**: `IMPLEMENTED`
-- **Summary**: Retrieves merged product details combining Medusa commerce pricing/stock with Payload rich content.
-
-#### `GET /api/v1/integration/products/{productId}/content`
-- **Status**: `IMPLEMENTED`
-- **Summary**: Fetches CMS content associated with a given Medusa product ID (`medusa_product_id`).
-
-#### `POST /api/v1/integration/products/{productId}/sync`
-- **Status**: `IMPLEMENTED`
-- **Summary**: Triggers catalog synchronization between Medusa commerce events and Payload CMS content caches.
-- **Security**: Requires `X-Internal-API-Key` header.
-
-#### `POST /api/v1/integration/webhooks`
-- **Status**: `IMPLEMENTED`
-- **Summary**: Receives webhook events from Medusa and Payload to execute asynchronous catalog synchronization.
-- **Security**: Requires `X-Internal-API-Key` header.
-
----
-
-## 8. API Inventory & Tag Categorization
+## 7. API Inventory & Tag Categorization
 
 | Category Tag | Description | Implementation Status |
 | :--- | :--- | :--- |
@@ -200,31 +134,25 @@ ApiError:
 | **Finance** | Contracts, Invoices, Payment Schedules, Transactions | `IMPLEMENTED` |
 | **Support** | Support Plans, SLA Rules, Support Tickets | `IMPLEMENTED` |
 | **Platform** | File Storage, Operational Tasks, Audit Logging | `IMPLEMENTED` |
-| **Commerce** | `/api/v1/commerce/products`, `/cart`, `/orders`, `/payments`, `/inventory` | `PLANNED` |
-| **CMS** | `/api/v1/cms/pages`, `/articles`, `/authors`, `/media`, `/seo` | `PLANNED` |
-| **Integration** | `/api/v1/integration/products/{id}`, `/sync`, `/webhooks` | `IMPLEMENTED` |
+| **Reporting** | Business metrics & pipeline analytics | `IMPLEMENTED` |
 
 ---
 
-## 9. Environment Configuration
+## 8. Environment Configuration
 
 The OpenAPI and Swagger UI behaviors are controlled by environment configuration:
 
 ```env
 OPENAPI_ENABLED=true
-OPENAPI_BASE_URL=http://localhost:8080
-SWAGGER_ENABLED=true
 ```
-
-Ensure no credentials or private keys are hardcoded in environment templates (`.env.example`).
 
 ---
 
-## 10. Local Development & Docker Usage
+## 9. Local Development & Docker Usage
 
 ### Running via Docker Compose
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 Access points:
 - Swagger UI: `http://localhost:8080/api/docs`

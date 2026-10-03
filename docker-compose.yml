@@ -8,7 +8,6 @@ services:
       - "8080:80"
     depends_on:
       - api
-      - integration
     networks:
       - depix-network
 
@@ -39,26 +38,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Database=Host=postgres;Port=5432;Database=crm_erp_db;Username=postgres;Password=postgrespassword
-      - MEDUSA_INTERNAL_URL=http://medusa:9000
-      - PAYLOAD_INTERNAL_URL=http://payload:3000
-      - INTEGRATION_INTERNAL_URL=http://integration:3001
-      - INTEGRATION_INTERNAL_API_KEY=your_integration_internal_api_key_placeholder
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - depix-network
-
-  integration:
-    build:
-      context: ./infrastructure/integration
-      dockerfile: Dockerfile
-    container_name: depix-integration
-    environment:
-      - PORT=3001
-      - MEDUSA_INTERNAL_URL=http://medusa:9000
-      - PAYLOAD_INTERNAL_URL=http://payload:3000
-      - INTEGRATION_INTERNAL_API_KEY=your_integration_internal_api_key_placeholder
     networks:
       - depix-network
 
