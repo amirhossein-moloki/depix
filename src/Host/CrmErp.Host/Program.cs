@@ -5,6 +5,7 @@ using BuildingBlocks.Common.Extensions;
 using BuildingBlocks.Infrastructure;
 using BuildingBlocks.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Modules.CRM.API;
@@ -42,6 +43,14 @@ _ = Modules.Reporting.Infrastructure.AssemblyReference.Assembly;
 // Add Building Blocks
 builder.Services.AddBuildingBlocksCommon();
 builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration);
+
+// Configure Forwarded Headers for Reverse Proxy support (Nginx / Caddy)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Configure CORS Policy
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
@@ -179,6 +188,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UseCorrelationId();
 app.UseUnifiedExceptionHandler();
 
