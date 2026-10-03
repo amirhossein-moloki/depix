@@ -4,7 +4,7 @@ export function internalAuthMiddleware(req: Request, res: Response, next: NextFu
   const isProduction = process.env.NODE_ENV === 'production';
   const expectedApiKey = process.env.INTEGRATION_INTERNAL_API_KEY;
 
-  if (isProduction && !expectedApiKey) {
+  if (isProduction && (!expectedApiKey || expectedApiKey.includes('PLACEHOLDER'))) {
     res.status(500).json({
       success: false,
       message: 'Server Error: INTEGRATION_INTERNAL_API_KEY is not configured in production environment',
@@ -21,7 +21,7 @@ export function internalAuthMiddleware(req: Request, res: Response, next: NextFu
     return;
   }
 
-  const effectiveApiKey = expectedApiKey || 'default_integration_secret_key';
+  const effectiveApiKey = expectedApiKey || 'dev_integration_api_key_for_local';
   const clientApiKey = req.header('X-Internal-API-Key') || req.header('x-internal-api-key');
 
   if (!clientApiKey || clientApiKey !== effectiveApiKey) {

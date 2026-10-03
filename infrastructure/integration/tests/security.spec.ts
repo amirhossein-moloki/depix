@@ -120,7 +120,7 @@ async function runSecurityTests() {
   app.use('/api/v1/integration', createIntegrationRouter(medusaService, payloadService, syncService, webhookHandler));
 
   const TEST_PORT = 3099;
-  const TEST_API_KEY = 'test_secret_internal_key_123';
+  const TEST_API_KEY = 'test_integration_internal_api_key_value';
   process.env.INTEGRATION_INTERNAL_API_KEY = TEST_API_KEY;
 
   const server = app.listen(TEST_PORT);

@@ -16,10 +16,12 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
             .Build();
 
         var connectionString = configuration.GetConnectionString("Database");
-        if (string.IsNullOrWhiteSpace(connectionString))
+        var env = configuration["ASPNETCORE_ENVIRONMENT"];
+        var isProduction = string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(connectionString) || connectionString.Contains("<DATABASE_PASSWORD>"))
         {
-            var env = configuration["ASPNETCORE_ENVIRONMENT"];
-            if (string.Equals(env, "Production", StringComparison.OrdinalIgnoreCase))
+            if (isProduction)
             {
                 throw new InvalidOperationException("ConnectionStrings:Database configuration is required in Production.");
             }

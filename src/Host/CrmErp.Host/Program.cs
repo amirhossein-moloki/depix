@@ -96,7 +96,7 @@ var jwtAudience = builder.Configuration["Jwt:Audience"];
 
 if (builder.Environment.IsProduction())
 {
-    if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
+    if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32 || jwtSecret.Contains("PLACEHOLDER"))
     {
         throw new InvalidOperationException("Jwt:Secret must be configured and be at least 32 characters long in Production.");
     }
@@ -111,7 +111,10 @@ if (builder.Environment.IsProduction())
 }
 else
 {
-    jwtSecret ??= "Development_Placeholder_Jwt_Secret_Key_Change_In_Production_32_Bytes!";
+    if (string.IsNullOrWhiteSpace(jwtSecret))
+    {
+        jwtSecret = "Development_Placeholder_Jwt_Secret_Key_32_Bytes_Long_Minimum!";
+    }
     jwtIssuer ??= "CrmErpApi";
     jwtAudience ??= "CrmErpClients";
 }
