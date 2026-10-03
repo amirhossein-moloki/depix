@@ -1,10 +1,30 @@
 import { Request, Response, NextFunction } from 'express';
 
 export function internalAuthMiddleware(req: Request, res: Response, next: NextFunction): void {
-  const expectedApiKey = process.env.INTEGRATION_INTERNAL_API_KEY || 'default_integration_secret_key';
+  const isProduction = process.env.NODE_ENV === 'production';
+  const expectedApiKey = process.env.INTEGRATION_INTERNAL_API_KEY;
+
+  if (isProduction && (!expectedApiKey || expectedApiKey.includes('PLACEHOLDER'))) {
+    res.status(500).json({
+      success: false,
+      message: 'Server Error: INTEGRATION_INTERNAL_API_KEY is not configured in production environment',
+      data: null,
+      errors: [
+        {
+          code: 'SERVER_CONFIGURATION_ERROR',
+          field: 'INTEGRATION_INTERNAL_API_KEY',
+          message: 'INTEGRATION_INTERNAL_API_KEY environment variable is required in production'
+        }
+      ],
+      traceId: req.header('x-trace-id') || 'untraced'
+    });
+    return;
+  }
+
+  const effectiveApiKey = expectedApiKey || 'dev_integration_api_key_for_local';
   const clientApiKey = req.header('X-Internal-API-Key') || req.header('x-internal-api-key');
 
-  if (!clientApiKey || clientApiKey !== expectedApiKey) {
+  if (!clientApiKey || clientApiKey !== effectiveApiKey) {
     res.status(401).json({
       success: false,
       message: 'Unauthorized: Missing or invalid internal API key',

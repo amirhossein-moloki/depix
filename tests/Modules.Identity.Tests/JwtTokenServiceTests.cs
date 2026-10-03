@@ -14,7 +14,7 @@ public class JwtTokenServiceTests
     {
         var jwtOptions = new JwtOptions
         {
-            Secret = "Development_Placeholder_Jwt_Secret_Key_Change_In_Production_32_Bytes!",
+            Secret = "Test_Jwt_Secret_Key_32_Bytes_Long_Minimum_For_Unit_Tests!",
             Issuer = "TestIssuer",
             Audience = "TestAudience",
             AccessTokenExpirationMinutes = 15,

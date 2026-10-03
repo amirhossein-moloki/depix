@@ -16,15 +16,15 @@ services:
     image: postgres:16-alpine
     container_name: crmerp-postgres
     environment:
-      POSTGRES_DB: crm_erp_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: ${POSTGRES_DB:-crm_erp_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -37,12 +37,12 @@ services:
       dockerfile: Dockerfile
     container_name: crmerp-api
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=crm_erp_db;Username=postgres;Password=postgrespassword
-      - MEDUSA_INTERNAL_URL=http://medusa:9000
-      - PAYLOAD_INTERNAL_URL=http://payload:3000
-      - INTEGRATION_INTERNAL_URL=http://integration:3001
-      - INTEGRATION_INTERNAL_API_KEY=your_integration_internal_api_key_placeholder
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=${POSTGRES_DB:-crm_erp_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      - MEDUSA_INTERNAL_URL=${MEDUSA_INTERNAL_URL:-http://medusa:9000}
+      - PAYLOAD_INTERNAL_URL=${PAYLOAD_INTERNAL_URL:-http://payload:3000}
+      - INTEGRATION_INTERNAL_URL=${INTEGRATION_INTERNAL_URL:-http://integration:3001}
+      - INTEGRATION_INTERNAL_API_KEY=${INTEGRATION_INTERNAL_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,9 +56,9 @@ services:
     container_name: depix-integration
     environment:
       - PORT=3001
-      - MEDUSA_INTERNAL_URL=http://medusa:9000
-      - PAYLOAD_INTERNAL_URL=http://payload:3000
-      - INTEGRATION_INTERNAL_API_KEY=your_integration_internal_api_key_placeholder
+      - MEDUSA_INTERNAL_URL=${MEDUSA_INTERNAL_URL:-http://medusa:9000}
+      - PAYLOAD_INTERNAL_URL=${PAYLOAD_INTERNAL_URL:-http://payload:3000}
+      - INTEGRATION_INTERNAL_API_KEY=${INTEGRATION_INTERNAL_API_KEY}
     networks:
       - depix-network
 

@@ -125,15 +125,22 @@ async function runTests() {
   console.log('✓ 4. Failure Handling / Degraded Mode Passed');
 
   // 5. Webhook Event Processing
+  mockMedusaClient.products.set('prod_500', {
+    id: 'prod_500',
+    title: 'Webhook Product',
+    handle: 'webhook-product',
+    status: 'published'
+  });
+
   const webhookResult = await webhookHandler.processWebhookEvent({
     eventId: 'evt_wh_01',
     eventType: 'commerce.product.created',
     source: 'medusa',
     timestamp: new Date().toISOString(),
-    data: { id: 'prod_100' }
+    data: { id: 'prod_500' }
   });
   assert.strictEqual(webhookResult.success, true);
-  assert.strictEqual(webhookResult.operation, 'update');
+  assert.strictEqual(webhookResult.operation, 'create');
   console.log('✓ 5. Webhook Event Processing Passed');
 
   console.log('--- All Integration Layer Tests Passed Successfully ---');
