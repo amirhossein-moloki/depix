@@ -47,7 +47,7 @@ builder.Services.AddBuildingBlocksInfrastructure(builder.Configuration);
 // Configure Forwarded Headers for Reverse Proxy support (Nginx / Caddy)
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
     options.KnownNetworks.Clear();
     options.KnownProxies.Clear();
 });
@@ -228,7 +228,7 @@ if (app.Environment.IsDevelopment() || openApiEnabled)
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Depix API v1");
-        c.RoutePrefix = "api/docs";
+        c.RoutePrefix = "swagger";
     });
 }
 
@@ -248,6 +248,11 @@ app.MapGet("/api/v1/health", () => Results.Ok(new { Status = "Healthy", System =
 app.MapGet("/api/openapi.json", (HttpContext context) =>
 {
     context.Response.Redirect("/swagger/v1/swagger.json", permanent: false);
+});
+
+app.MapGet("/api/docs", (HttpContext context) =>
+{
+    context.Response.Redirect("/swagger/index.html", permanent: false);
 });
 
 app.MapGet("/", () => Results.Ok(new
