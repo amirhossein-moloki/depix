@@ -18,7 +18,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-crm_erp_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -38,11 +38,11 @@ services:
     container_name: crmerp-api
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
-      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=${POSTGRES_DB:-crm_erp_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgrespassword}
+      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=${POSTGRES_DB:-crm_erp_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
       - MEDUSA_INTERNAL_URL=${MEDUSA_INTERNAL_URL:-http://medusa:9000}
       - PAYLOAD_INTERNAL_URL=${PAYLOAD_INTERNAL_URL:-http://payload:3000}
       - INTEGRATION_INTERNAL_URL=${INTEGRATION_INTERNAL_URL:-http://integration:3001}
-      - INTEGRATION_INTERNAL_API_KEY=${INTEGRATION_INTERNAL_API_KEY:-your_integration_internal_api_key_placeholder}
+      - INTEGRATION_INTERNAL_API_KEY=${INTEGRATION_INTERNAL_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -56,9 +56,9 @@ services:
     container_name: depix-integration
     environment:
       - PORT=3001
-      - MEDUSA_INTERNAL_URL=http://medusa:9000
-      - PAYLOAD_INTERNAL_URL=http://payload:3000
-      - INTEGRATION_INTERNAL_API_KEY=your_integration_internal_api_key_placeholder
+      - MEDUSA_INTERNAL_URL=${MEDUSA_INTERNAL_URL:-http://medusa:9000}
+      - PAYLOAD_INTERNAL_URL=${PAYLOAD_INTERNAL_URL:-http://payload:3000}
+      - INTEGRATION_INTERNAL_API_KEY=${INTEGRATION_INTERNAL_API_KEY}
     networks:
       - depix-network
 
