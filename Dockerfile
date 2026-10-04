@@ -2,14 +2,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy solution and project files first for efficient caching
-COPY CrmErp.slnx ./
+COPY CrmErp.sln ./
 COPY src/BuildingBlocks/*/*.csproj ./
 COPY src/Modules/*/*/*.csproj ./
 COPY src/Host/*/*.csproj ./
 COPY tests/*/*.csproj ./
 
 # Restore dependencies
-RUN dotnet restore CrmErp.slnx
+RUN dotnet restore CrmErp.sln
 
 # Copy full source
 COPY . .
