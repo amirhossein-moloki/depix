@@ -20,10 +20,10 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: Restore dependencies
-      run: dotnet restore CrmErp.slnx
+      run: dotnet restore CrmErp.sln
 
     - name: Build solution
-      run: dotnet build CrmErp.slnx --no-restore --configuration Release
+      run: dotnet build CrmErp.sln --no-restore --configuration Release
 
     - name: Run Architecture & Unit Tests
-      run: dotnet test CrmErp.slnx --no-build --configuration Release --verbosity normal
+      run: dotnet test CrmErp.sln --no-build --configuration Release --verbosity normal
