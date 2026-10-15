@@ -103,7 +103,6 @@ Key Configuration Keys:
 - `Jwt__RefreshTokenExpirationDays`: Refresh token lifespan in days (default: `7`).
 - `Cors__AllowedOrigins`: JSON array or env vars specifying allowed CORS origins (e.g. `Cors__AllowedOrigins__0=https://crm.yourdomain.com`).
 - `OPENAPI_ENABLED`: Set to `true` to enable Swagger UI and `/api/docs` documentation endpoint.
-- `INTEGRATION_INTERNAL_API_KEY`: API Key for service-to-service integration endpoints.
 
 ### B. Database Migrations
 Migrations are maintained under `src/Host/CrmErp.Host/Migrations` targeting `ApplicationDbContext`.
@@ -123,7 +122,7 @@ Note: Automated startup migration execution and destructive operations like `Ens
 ### D. Swagger / OpenAPI Documentation
 - **Swagger UI**: Accessible at `/api/docs` when `OPENAPI_ENABLED=true` or in Development mode.
 - **OpenAPI JSON**: Available at `/swagger/v1/swagger.json` or redirected from `/api/openapi.json`.
-- **Security Schemes**: Supports JWT Bearer (`bearerAuth`) and Internal Service API Key (`X-Internal-API-Key`).
+- **Security Schemes**: Supports JWT Bearer (`bearerAuth`).
 
 ---
 
@@ -135,7 +134,7 @@ Note: Automated startup migration execution and destructive operations like `Ens
 
 ### Quick Start with Docker
 ```bash
-# Build and run the gateway, database, API host, and integration layer
+# Build and run the gateway, database, and API host
 docker compose build
 docker compose up -d
 

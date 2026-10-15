@@ -174,7 +174,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Depix API",
         Version = "1.0.0",
-        Description = "Unified API for Depix Commerce, CMS, and CRM/ERP Operations"
+        Description = "Unified API for Depix CRM/ERP Operations"
     });
 
     c.AddSecurityDefinition("bearerAuth", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
@@ -185,14 +185,6 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Description = "JWT Authorization header using the Bearer scheme."
-    });
-
-    c.AddSecurityDefinition("internalApiKey", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        Name = "X-Internal-API-Key",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Internal Service-to-Service API Key for integration endpoints."
     });
 
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
