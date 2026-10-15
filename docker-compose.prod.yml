@@ -6,6 +6,8 @@ services:
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/dedpix/docker/nginx/acme-challenge:/var/www/html:ro
     ports:
       - "80:80"
       - "443:443"
