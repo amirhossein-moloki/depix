@@ -21,7 +21,7 @@ services:
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-crm_erp_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
     ports:
       - "5432:5432"
     volumes:
@@ -41,7 +41,15 @@ services:
     container_name: crmerp-backend
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
-      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=${POSTGRES_DB:-crm_erp_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD}
+      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=${POSTGRES_DB:-crm_erp_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgrespassword}
+      - Jwt__Secret=${Jwt__Secret:-Development_Placeholder_Jwt_Secret_Key_32_Bytes_Long_Minimum!}
+      - Jwt__Issuer=${Jwt__Issuer:-CrmErpApi}
+      - Jwt__Audience=${Jwt__Audience:-CrmErpClients}
+      - Jwt__AccessTokenExpirationMinutes=${Jwt__AccessTokenExpirationMinutes:-60}
+      - Jwt__RefreshTokenExpirationDays=${Jwt__RefreshTokenExpirationDays:-7}
+      - Cors__AllowedOrigins__0=${Cors__AllowedOrigins__0:-http://localhost:3000}
+      - Cors__AllowedOrigins__1=${Cors__AllowedOrigins__1:-http://localhost:8080}
+      - OPENAPI_ENABLED=${OPENAPI_ENABLED:-true}
     depends_on:
       postgres:
         condition: service_healthy

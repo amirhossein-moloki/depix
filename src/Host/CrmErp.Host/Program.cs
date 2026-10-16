@@ -5,6 +5,7 @@ using BuildingBlocks.Common.Extensions;
 using BuildingBlocks.Infrastructure;
 using BuildingBlocks.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -204,6 +205,23 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    try
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        logger.LogInformation("Applying EF Core database migrations on startup...");
+        await dbContext.Database.MigrateAsync();
+        logger.LogInformation("Database migrations applied successfully.");
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "An error occurred while applying EF Core database migrations on startup.");
+        throw;
+    }
+}
 
 app.UseForwardedHeaders();
 app.UseCorrelationId();
