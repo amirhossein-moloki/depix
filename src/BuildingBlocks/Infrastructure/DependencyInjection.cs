@@ -2,6 +2,7 @@ using BuildingBlocks.Application.Events;
 using BuildingBlocks.Application.Persistence;
 using BuildingBlocks.Infrastructure.Events;
 using BuildingBlocks.Infrastructure.Persistence;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,6 +32,26 @@ public static class DependencyInjection
         });
 
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
+        // Configure Data Protection Key Persistence to avoid unpersisted key ring warnings in containers
+        var dataProtectionPath = configuration["DataProtection:Path"] ?? "/app/dpkeys";
+        if (!Directory.Exists(dataProtectionPath))
+        {
+            try
+            {
+                Directory.CreateDirectory(dataProtectionPath);
+            }
+            catch
+            {
+                // Fallback to local temp directory if default path is inaccessible
+                dataProtectionPath = Path.Combine(Path.GetTempPath(), "crmerp-dpkeys");
+                Directory.CreateDirectory(dataProtectionPath);
+            }
+        }
+
+        services.AddDataProtection()
+            .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath))
+            .SetApplicationName("CrmErp");
 
         services.AddScoped<IEventBus, InMemoryEventBus>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
