@@ -6,6 +6,8 @@ obj/
 dist/
 build/
 out/
+publish/
+**/publish/
 node_modules/
 **/node_modules/
 
