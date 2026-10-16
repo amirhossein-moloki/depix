@@ -50,6 +50,11 @@ services:
       - Cors__AllowedOrigins__0=${Cors__AllowedOrigins__0:-http://localhost:3000}
       - Cors__AllowedOrigins__1=${Cors__AllowedOrigins__1:-http://localhost:8080}
       - OPENAPI_ENABLED=${OPENAPI_ENABLED:-true}
+      - FileStorage__BasePath=/app/uploads
+      - DataProtection__Path=/app/dpkeys
+    volumes:
+      - uploads_data:/app/uploads
+      - dpkeys_data:/app/dpkeys
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,3 +80,5 @@ networks:
 
 volumes:
   postgres_data:
+  uploads_data:
+  dpkeys_data:

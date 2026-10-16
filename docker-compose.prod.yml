@@ -54,8 +54,10 @@ services:
       - Cors__AllowedOrigins__0=${CORS_ALLOWED_ORIGIN}
       - OPENAPI_ENABLED=${OPENAPI_ENABLED:-true}
       - FileStorage__BasePath=/app/uploads
+      - DataProtection__Path=/app/dpkeys
     volumes:
       - uploads_prod_data:/app/uploads
+      - dpkeys_prod_data:/app/dpkeys
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,3 +85,4 @@ networks:
 volumes:
   postgres_prod_data:
   uploads_prod_data:
+  dpkeys_prod_data:

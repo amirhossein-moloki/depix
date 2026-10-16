@@ -77,9 +77,25 @@ RUN dotnet publish src/Host/CrmErp.Host/CrmErp.Host.csproj -c Release -o /app/pu
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
+
+# Install curl for docker health checks and clean apt cache
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
 EXPOSE 5000
 
 ENV ASPNETCORE_URLS=http://+:5000
 
+# Create non-root user and set permissions for uploads and Data Protection keys directories
+RUN groupadd -g 10001 appgroup \
+    && useradd -u 10001 -g appgroup -m -s /bin/false appuser \
+    && mkdir -p /app/uploads /app/dpkeys \
+    && chown -R appuser:appgroup /app
+
 COPY --from=build /app/publish .
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
 ENTRYPOINT ["dotnet", "CrmErp.Host.dll"]
