@@ -1,20 +1,6 @@
-services:
-  nginx:
-    image: nginx:alpine
-    container_name: depix-gateway
-    volumes:
-      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./infrastructure/nginx/conf.d:/etc/nginx/conf.d:ro
-    ports:
-      - "8080:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-      frontend:
-        condition: service_started
-    networks:
-      - depix-network
+version: '3.8'
 
+services:
   postgres:
     image: postgres:16-alpine
     container_name: crmerp-postgres
@@ -61,13 +47,31 @@ services:
       - depix-network
 
   frontend:
-    image: node:20-alpine
+    build:
+      context: /var/www/dedpix
+      dockerfile: Dockerfile
     container_name: depix-frontend
     restart: unless-stopped
-    working_dir: /app
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+    networks:
+      - depix-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: depix-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
     volumes:
-      - /var/www/dedpix:/app
-    command: sh -c "if [ -f package.json ]; then npm start -- -p 3000; else echo 'Frontend source not found' && exit 1; fi"
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - backend
     networks:
       - depix-network
 
