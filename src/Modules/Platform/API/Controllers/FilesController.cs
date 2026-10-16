@@ -41,7 +41,7 @@ public class FilesController : ControllerBase
     [HttpPost]
     [Authorize(Policy = "Platform.File.Create")]
     public async Task<IActionResult> UploadFile(
-        [FromForm] IFormFile file,
+        IFormFile file,
         [FromForm] string entityType,
         [FromForm] Guid entityId,
         [FromForm] string? description,
