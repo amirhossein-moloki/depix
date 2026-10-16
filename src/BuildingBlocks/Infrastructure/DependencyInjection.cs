@@ -1,3 +1,6 @@
+using BuildingBlocks.Application.Events;
+using BuildingBlocks.Application.Persistence;
+using BuildingBlocks.Infrastructure.Events;
 using BuildingBlocks.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +31,9 @@ public static class DependencyInjection
         });
 
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+
+        services.AddScoped<IEventBus, InMemoryEventBus>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         return services;
     }
