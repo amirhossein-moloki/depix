@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: crmerp-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-crm_erp_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - depix-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crmerp-backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - ConnectionStrings__Database=Host=postgres;Port=5432;Database=${POSTGRES_DB:-crm_erp_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgrespassword}
+      - Jwt__Secret=${Jwt__Secret:-Development_Placeholder_Jwt_Secret_Key_32_Bytes_Long_Minimum!}
+      - Jwt__Issuer=${Jwt__Issuer:-CrmErpApi}
+      - Jwt__Audience=${Jwt__Audience:-CrmErpClients}
+      - Jwt__AccessTokenExpirationMinutes=${Jwt__AccessTokenExpirationMinutes:-60}
+      - Jwt__RefreshTokenExpirationDays=${Jwt__RefreshTokenExpirationDays:-7}
+      - Cors__AllowedOrigins__0=${Cors__AllowedOrigins__0:-http://localhost:3000}
+      - Cors__AllowedOrigins__1=${Cors__AllowedOrigins__1:-http://localhost:8080}
+      - OPENAPI_ENABLED=${OPENAPI_ENABLED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - depix-network
+
+  frontend:
+    build:
+      context: /var/www/dedpix
+      dockerfile: Dockerfile
+    container_name: depix-frontend
+    restart: unless-stopped
+    environment:
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
+    networks:
+      - depix-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: depix-gateway
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - depix-network
+
+networks:
+  depix-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
