@@ -13,6 +13,10 @@ public record LoginResult(
     List<string> Permissions
 );
 
+public record ResetPasswordRequest(string CurrentPassword, string NewPassword);
+
+public record AdminResetPasswordRequest(string NewPassword);
+
 public record RefreshTokenRequest(string RefreshToken);
 
 public record LogoutRequest(string RefreshToken);
