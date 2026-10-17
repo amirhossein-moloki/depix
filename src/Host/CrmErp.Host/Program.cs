@@ -325,6 +325,104 @@ if (args.Length > 0 && args[0].Equals("create-admin", StringComparison.OrdinalIg
     }
 }
 
+// Check for CLI argument: reset-password
+if (args.Length > 0 && args[0].Equals("reset-password", StringComparison.OrdinalIgnoreCase))
+{
+    var tempApp = builder.Build();
+    using (var scope = tempApp.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        var hasher = services.GetRequiredService<Modules.Identity.Application.Common.Interfaces.IPasswordHasherService>();
+
+        logger.LogInformation("Running CLI command: reset-password");
+
+        string email = string.Empty;
+        string password = string.Empty;
+
+        // Extract CLI arguments if provided e.g. --email user@domain.com --password secret OR --new-password secret
+        for (int i = 1; i < args.Length; i++)
+        {
+            if (args[i].Equals("--email", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                email = args[i + 1];
+                i++;
+            }
+            else if ((args[i].Equals("--password", StringComparison.OrdinalIgnoreCase) || args[i].Equals("--new-password", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
+            {
+                password = args[i + 1];
+                i++;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            Console.Write("Enter User Email: ");
+            email = Console.ReadLine()?.Trim() ?? string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            Console.Write("Enter New Password: ");
+            StringBuilder sb = new StringBuilder();
+            while (true)
+            {
+                var key = Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    break;
+                }
+                if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
+                {
+                    sb.Remove(sb.Length - 1, 1);
+                }
+                else if (key.Key != ConsoleKey.Backspace)
+                {
+                    sb.Append(key.KeyChar);
+                }
+            }
+            password = sb.ToString();
+        }
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            Console.Error.WriteLine("Error: User email and new password cannot be empty.");
+            Environment.Exit(1);
+            return;
+        }
+
+        await dbContext.Database.MigrateAsync();
+
+        var existingUser = await dbContext.Set<Modules.Identity.Domain.Entities.User>()
+            .Include(u => u.RefreshTokens)
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+        if (existingUser == null)
+        {
+            Console.Error.WriteLine($"Error: User with email '{email}' not found.");
+            Environment.Exit(1);
+            return;
+        }
+
+        var hashedPassword = hasher.HashPassword(password);
+        existingUser.UpdatePassword(hashedPassword);
+
+        // Revoke active refresh tokens upon password reset
+        foreach (var token in existingUser.RefreshTokens.Where(rt => rt.IsActive))
+        {
+            token.Revoke();
+        }
+
+        await dbContext.SaveChangesAsync();
+
+        Console.WriteLine($"Password for user '{email}' reset successfully.");
+        Environment.Exit(0);
+        return;
+    }
+}
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

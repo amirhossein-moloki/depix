@@ -76,7 +76,19 @@ If flags are omitted, interactive CLI prompts securely collect inputs with maske
 
 ---
 
-## 5.2 Registration & User Approval Lifecycle
+## 5.2 CLI Password Reset Tool
+
+User passwords can be reset directly and securely via local executable CLI command:
+
+```bash
+dotnet run --project src/Host/CrmErp.Host/CrmErp.Host.csproj -- reset-password --email user@depix.ir --password 'NewSecurePassword123!'
+```
+
+Both `--password` and `--new-password` argument flags are supported. If flags are omitted, interactive CLI prompts collect missing inputs with masked password entry. Resetting a password revokes all active refresh tokens for the user.
+
+---
+
+## 5.3 Registration & User Approval Lifecycle
 
 1. **Public Registration**: Users register via `POST /api/auth/register`. Registrations default to `PendingApproval` status and do not issue JWT access tokens.
 2. **Admin User Creation**: Managers create active users directly via `POST /api/users`.
