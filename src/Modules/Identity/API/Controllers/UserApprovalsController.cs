@@ -15,6 +15,10 @@ public class UserApprovalsController : ControllerBase
 
     public UserApprovalsController(IAuthUseCaseService authService) => _authService = authService;
 
+    [HttpGet("roles")]
+    public async Task<IActionResult> GetAssignableRoles(CancellationToken cancellationToken)
+        => Ok(await _authService.GetAssignableRolesAsync(cancellationToken));
+
     [HttpGet("pending")]
     public async Task<IActionResult> GetPending(CancellationToken cancellationToken)
     {
