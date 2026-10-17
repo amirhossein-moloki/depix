@@ -84,4 +84,17 @@ public class AuthUseCaseServiceTests
         await Assert.ThrowsAsync<UnauthorizedException>(() =>
             _service.LoginAsync(new LoginRequest("john@example.com", "WrongPassword")));
     }
+    [Fact]
+    public async Task LoginAsync_PendingApproval_ShouldThrowUnauthorizedException()
+    {
+        var user = User.Create("Jane", "Doe", "jane@example.com", "hashed_pwd");
+        _userRepoMock.Setup(r => r.GetByEmailAsync("jane@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _approvalRepoMock.Setup(r => r.GetByUserIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserApproval.CreatePending(user.Id));
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            _service.LoginAsync(new LoginRequest("jane@example.com", "Password123!")));
+    }
+
 }
