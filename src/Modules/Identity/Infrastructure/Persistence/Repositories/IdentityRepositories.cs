@@ -54,7 +54,26 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
 
     public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
-        _dbContext.Set<User>().Update(user);
+        var entry = _dbContext.Entry(user);
+        if (entry.State == EntityState.Detached)
+        {
+            _dbContext.Attach(user);
+            entry.State = EntityState.Modified;
+        }
+
+        foreach (var refreshToken in user.RefreshTokens)
+        {
+            var tokenEntry = _dbContext.Entry(refreshToken);
+            if (tokenEntry.State == EntityState.Detached)
+            {
+                _dbContext.Set<RefreshToken>().Add(refreshToken);
+            }
+            else if (tokenEntry.State == EntityState.Modified)
+            {
+                tokenEntry.State = EntityState.Added;
+            }
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -116,7 +135,11 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
 
     public async Task UpdateAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default)
     {
-        _dbContext.Set<RefreshToken>().Update(refreshToken);
+        var entry = _dbContext.Entry(refreshToken);
+        if (entry.State == EntityState.Detached)
+        {
+            _dbContext.Set<RefreshToken>().Update(refreshToken);
+        }
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }
