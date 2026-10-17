@@ -139,6 +139,12 @@ namespace CrmErp.Host.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -173,6 +179,77 @@ namespace CrmErp.Host.Migrations
                     b.HasIndex("Name");
 
                     b.ToTable("companies", (string)null);
+                });
+
+            modelBuilder.Entity("Modules.CRM.Domain.Entities.CompanyVisit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SellerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("VisitedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("FollowUpAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("double precision");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "VisitedAt");
+
+                    b.HasIndex("SellerUserId", "VisitedAt");
+
+                    b.ToTable("company_visits", (string)null);
+                });
+
+            modelBuilder.Entity("Modules.Identity.Domain.Entities.UserApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("user_approvals", (string)null);
                 });
 
             modelBuilder.Entity("Modules.CRM.Domain.Entities.Contact", b =>
@@ -2632,6 +2709,15 @@ namespace CrmErp.Host.Migrations
                     b.Navigation("Contacts");
 
                     b.Navigation("Leads");
+                });
+
+            modelBuilder.Entity("Modules.CRM.Domain.Entities.CompanyVisit", b =>
+                {
+                    b.HasOne("Modules.CRM.Domain.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Modules.CRM.Domain.Entities.Lead", b =>
