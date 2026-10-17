@@ -29,9 +29,20 @@ public record CompanyMapPointDto(
     double Latitude,
     double Longitude);
 
+public record CompanyVisitMapPointDto(
+    Guid VisitId,
+    Guid CompanyId,
+    string CompanyName,
+    Guid SellerUserId,
+    DateTime VisitedAt,
+    string Notes,
+    double Latitude,
+    double Longitude);
+
 public interface ICompanyVisitService
 {
     Task<CompanyVisitDto> CreateAsync(Guid sellerUserId, CreateCompanyVisitRequest request, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CompanyVisitDto>> GetByCompanyAsync(Guid companyId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<CompanyMapPointDto>> GetMapPointsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<CompanyVisitMapPointDto>> GetVisitMapPointsAsync(CancellationToken cancellationToken = default);
 }
