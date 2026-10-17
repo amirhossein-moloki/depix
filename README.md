@@ -54,11 +54,15 @@ src/
 │   ├── Platform/                # File, Internal Task, AuditLog, Setting
 │   └── Reporting/               # Business analytics & pipeline aggregations
 │
+├── Tools/
+│   └── Depix.Cli/               # Interactive Developer CLI & Django-Shell-like REPL
+│
 └── Host/
     └── CrmErp.Host/             # ASP.NET Core Web API Host & Composition Root
 
 tests/
 ├── CrmErp.ArchitectureTests/    # NetArchTest Clean Architecture & Module Isolation verification
+├── Depix.Cli.Tests/            # Depix Shell CLI Command & Script Evaluation Unit Tests
 ├── Modules.Identity.Tests/     # JWT Token & Password Hasher Unit Tests
 ├── UnitTests/                   # Domain & Command/Query Handler Unit Tests
 └── IntegrationTests/            # EF Core In-Memory & End-to-End Workflow Integration Tests
@@ -162,7 +166,29 @@ dotnet run --project src/Host/CrmErp.Host/CrmErp.Host.csproj
 
 ---
 
-## 6. End-to-End Workflow Architecture
+## 6. Depix Shell (Interactive Developer CLI & Django-Shell Equivalent)
+
+`Depix Shell` (`src/Tools/Depix.Cli`) is an interactive developer and administrative shell that provides full access to dependency injection services, EF Core DbContext, configuration, and Roslyn-powered C# scripting.
+
+### Run Depix Shell
+```bash
+# Interactive REPL
+dotnet run --project src/Tools/Depix.Cli
+
+# Non-interactive command
+dotnet run --project src/Tools/Depix.Cli -- db status
+dotnet run --project src/Tools/Depix.Cli -- users list
+dotnet run --project src/Tools/Depix.Cli -- eval "dbContext.Model.GetEntityTypes().Count()"
+
+# Via Docker Compose
+docker compose exec backend dotnet run --project src/Tools/Depix.Cli
+```
+
+For complete documentation on built-in commands, C# script evaluation, Docker usage, and production security controls, see [DEPIX_CLI.md](DEPIX_CLI.md).
+
+---
+
+## 7. End-to-End Workflow Architecture
 
 The codebase natively enforces and tests the primary business pipeline:
 
