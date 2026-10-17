@@ -18,6 +18,11 @@ public class CompanyVisitsController : ControllerBase
     public async Task<IActionResult> GetMapPoints(CancellationToken cancellationToken)
         => Ok(await _service.GetMapPointsAsync(cancellationToken));
 
+    [HttpGet("visit-points")]
+    [Authorize(Policy = "CRM.Company.Read")]
+    public async Task<IActionResult> GetVisitMapPoints(CancellationToken cancellationToken)
+        => Ok(await _service.GetVisitMapPointsAsync(cancellationToken));
+
     [HttpGet("company/{companyId:guid}")]
     [Authorize(Policy = "CRM.Company.Read")]
     public async Task<IActionResult> GetByCompany(Guid companyId, CancellationToken cancellationToken)
