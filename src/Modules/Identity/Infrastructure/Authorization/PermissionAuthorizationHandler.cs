@@ -21,6 +21,13 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
             return Task.CompletedTask;
         }
 
+        var roleNames = context.User.FindAll(System.Security.Claims.ClaimTypes.Role).Select(c => c.Value);
+        if (roleNames.Any(role => role.Equals("Super Admin", StringComparison.OrdinalIgnoreCase)))
+        {
+            context.Succeed(requirement);
+            return Task.CompletedTask;
+        }
+
         var permissions = context.User.FindAll("permissions").Select(c => c.Value);
         if (permissions.Contains(requirement.Permission, StringComparer.OrdinalIgnoreCase))
         {
