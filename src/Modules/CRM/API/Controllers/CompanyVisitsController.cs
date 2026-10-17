@@ -14,14 +14,17 @@ public class CompanyVisitsController : ControllerBase
     public CompanyVisitsController(ICompanyVisitService service) => _service = service;
 
     [HttpGet("map-points")]
+    [Authorize(Policy = "CRM.Company.Read")]
     public async Task<IActionResult> GetMapPoints(CancellationToken cancellationToken)
         => Ok(await _service.GetMapPointsAsync(cancellationToken));
 
     [HttpGet("company/{companyId:guid}")]
+    [Authorize(Policy = "CRM.Company.Read")]
     public async Task<IActionResult> GetByCompany(Guid companyId, CancellationToken cancellationToken)
         => Ok(await _service.GetByCompanyAsync(companyId, cancellationToken));
 
     [HttpPost]
+    [Authorize(Policy = "CRM.Activity.Create")]
     public async Task<IActionResult> Create([FromBody] CreateCompanyVisitRequest request, CancellationToken cancellationToken)
     {
         var userIdText = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
