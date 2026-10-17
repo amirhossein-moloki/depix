@@ -2720,6 +2720,15 @@ namespace CrmErp.Host.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Modules.Identity.Domain.Entities.UserApproval", b =>
+                {
+                    b.HasOne("Modules.Identity.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Modules.CRM.Domain.Entities.Lead", b =>
                 {
                     b.Navigation("Activities");
