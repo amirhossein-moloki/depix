@@ -14,7 +14,9 @@ public record CreateCompanyCommand(
     string Phone,
     string Email,
     string AddressText,
-    string Type = "LEAD"
+    string Type = "LEAD",
+    double? Latitude = null,
+    double? Longitude = null
 ) : ICommand<CompanyDto>;
 
 public class CreateCompanyCommandHandler : ICommandHandler<CreateCompanyCommand, CompanyDto>
@@ -32,18 +34,12 @@ public class CreateCompanyCommandHandler : ICommandHandler<CreateCompanyCommand,
     {
         var address = new Address(command.AddressText);
         var company = Company.Create(
-            command.Name,
-            command.Industry,
-            command.Website,
-            command.Phone,
-            command.Email,
-            address,
-            string.IsNullOrWhiteSpace(command.Type) ? "LEAD" : command.Type
-        );
+            command.Name, command.Industry, command.Website, command.Phone, command.Email, address,
+            string.IsNullOrWhiteSpace(command.Type) ? "LEAD" : command.Type,
+            command.Latitude, command.Longitude);
 
         await _companyRepository.AddAsync(company, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
         return company.ToDto();
     }
 }
