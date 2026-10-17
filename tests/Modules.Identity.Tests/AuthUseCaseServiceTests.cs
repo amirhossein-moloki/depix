@@ -82,4 +82,40 @@ public class AuthUseCaseServiceTests
         await Assert.ThrowsAsync<UnauthorizedException>(() =>
             _service.LoginAsync(new LoginRequest("john@example.com", "WrongPassword")));
     }
+
+    [Fact]
+    public async Task LoginAsync_PendingApprovalUser_ShouldThrowForbiddenException()
+    {
+        // Arrange
+        var user = User.Create("John", "Doe", "pending@example.com", "hashed_pwd", status: UserStatus.PendingApproval);
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync("pending@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _hasherMock.Setup(h => h.VerifyPassword("Password123!", "hashed_pwd"))
+            .Returns(true);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            _service.LoginAsync(new LoginRequest("pending@example.com", "Password123!")));
+
+        Assert.Contains("pending administrator approval", ex.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_RejectedUser_ShouldThrowForbiddenException()
+    {
+        // Arrange
+        var user = User.Create("John", "Doe", "rejected@example.com", "hashed_pwd", status: UserStatus.Rejected);
+
+        _userRepoMock.Setup(r => r.GetByEmailAsync("rejected@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _hasherMock.Setup(h => h.VerifyPassword("Password123!", "hashed_pwd"))
+            .Returns(true);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<ForbiddenException>(() =>
+            _service.LoginAsync(new LoginRequest("rejected@example.com", "Password123!")));
+
+        Assert.Contains("rejected", ex.Message);
+    }
 }

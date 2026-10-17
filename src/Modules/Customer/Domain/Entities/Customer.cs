@@ -12,6 +12,8 @@ public class Customer : AuditableAggregateRoot, ISoftDelete
     public Guid? PrimaryContactId { get; private set; }
     public Guid? AssignedTo { get; private set; }
     public string? Notes { get; private set; }
+    public double? Latitude { get; private set; }
+    public double? Longitude { get; private set; }
 
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -27,7 +29,9 @@ public class Customer : AuditableAggregateRoot, ISoftDelete
         string status = "ACTIVE",
         Guid? primaryContactId = null,
         Guid? assignedTo = null,
-        string? notes = null) : base(id)
+        string? notes = null,
+        double? latitude = null,
+        double? longitude = null) : base(id)
     {
         if (companyId == Guid.Empty)
             throw new ArgumentException("Company ID cannot be empty.", nameof(companyId));
@@ -42,6 +46,30 @@ public class Customer : AuditableAggregateRoot, ISoftDelete
         PrimaryContactId = primaryContactId;
         AssignedTo = assignedTo;
         Notes = notes;
+        SetCoordinates(latitude, longitude);
+    }
+
+    public void SetCoordinates(double? latitude, double? longitude)
+    {
+        if (latitude.HasValue || longitude.HasValue)
+        {
+            if (!latitude.HasValue || !longitude.HasValue)
+            {
+                throw new ArgumentException("Both latitude and longitude must be provided together.");
+            }
+            if (latitude.Value < -90 || latitude.Value > 90)
+            {
+                throw new ArgumentOutOfRangeException(nameof(latitude), "Latitude must be between -90 and 90 degrees.");
+            }
+            if (longitude.Value < -180 || longitude.Value > 180)
+            {
+                throw new ArgumentOutOfRangeException(nameof(longitude), "Longitude must be between -180 and 180 degrees.");
+            }
+        }
+
+        Latitude = latitude;
+        Longitude = longitude;
+        UpdateTimestamp(DateTime.UtcNow);
     }
 
     public static Customer Create(

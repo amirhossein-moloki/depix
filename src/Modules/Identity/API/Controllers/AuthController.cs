@@ -28,6 +28,14 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<LoginResult>.SuccessResponse(result, "Logged in successfully."));
     }
 
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Register([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
+    {
+        var user = await _authUseCaseService.RegisterPublicUserAsync(request, cancellationToken);
+        return Ok(ApiResponse<UserDto>.SuccessResponse(user, "Registration successful. Account is pending administrator approval."));
+    }
+
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)

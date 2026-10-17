@@ -15,6 +15,8 @@ public class Company : AuditableAggregateRoot, ISoftDelete
     public string Email { get; private set; } = string.Empty;
     public Address Address { get; private set; } = new Address(string.Empty);
     public string Type { get; private set; } = "LEAD"; // LEAD, CUSTOMER, INACTIVE
+    public double? Latitude { get; private set; }
+    public double? Longitude { get; private set; }
 
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -25,7 +27,7 @@ public class Company : AuditableAggregateRoot, ISoftDelete
 
     private Company() { }
 
-    public Company(Guid id, string name, string industry, string website, string phone, string email, Address address, string type = "LEAD") : base(id)
+    public Company(Guid id, string name, string industry, string website, string phone, string email, Address address, string type = "LEAD", double? latitude = null, double? longitude = null) : base(id)
     {
         Name = name;
         Industry = industry;
@@ -34,11 +36,35 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         Email = email;
         Address = address;
         Type = type;
+        SetCoordinates(latitude, longitude);
     }
 
-    public static Company Create(string name, string industry, string website, string phone, string email, Address address, string type = "LEAD")
+    public static Company Create(string name, string industry, string website, string phone, string email, Address address, string type = "LEAD", double? latitude = null, double? longitude = null)
     {
-        return new Company(Guid.NewGuid(), name, industry, website, phone, email, address, type);
+        return new Company(Guid.NewGuid(), name, industry, website, phone, email, address, type, latitude, longitude);
+    }
+
+    public void SetCoordinates(double? latitude, double? longitude)
+    {
+        if (latitude.HasValue || longitude.HasValue)
+        {
+            if (!latitude.HasValue || !longitude.HasValue)
+            {
+                throw new ArgumentException("Both latitude and longitude must be provided together.");
+            }
+            if (latitude.Value < -90 || latitude.Value > 90)
+            {
+                throw new ArgumentOutOfRangeException(nameof(latitude), "Latitude must be between -90 and 90 degrees.");
+            }
+            if (longitude.Value < -180 || longitude.Value > 180)
+            {
+                throw new ArgumentOutOfRangeException(nameof(longitude), "Longitude must be between -180 and 180 degrees.");
+            }
+        }
+
+        Latitude = latitude;
+        Longitude = longitude;
+        UpdateTimestamp(DateTime.UtcNow);
     }
 
     public void MarkAsCustomer()

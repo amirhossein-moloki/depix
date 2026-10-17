@@ -37,6 +37,15 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), cancellationToken);
     }
 
+    public async Task<List<User>> GetPendingUsersAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<User>()
+            .Include(u => u.UserRoles)
+            .Where(u => u.Status == UserStatus.PendingApproval)
+            .OrderByDescending(u => u.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         await _dbContext.Set<User>().AddAsync(user, cancellationToken);

@@ -17,6 +17,39 @@ public record RefreshTokenRequest(string RefreshToken);
 
 public record LogoutRequest(string RefreshToken);
 
+public record RegisterUserRequest(
+    string FirstName,
+    string LastName,
+    string Email,
+    string Password,
+    string? Phone
+);
+
+public record CreateUserByAdminRequest(
+    string FirstName,
+    string LastName,
+    string Email,
+    string Password,
+    string? Phone,
+    List<string>? RoleNames
+);
+
+public record UserDto(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string? Phone,
+    string Status,
+    DateTime CreatedAt,
+    List<string> Roles,
+    Guid? ApprovedBy,
+    DateTime? ApprovedAt,
+    string? RejectionReason
+);
+
+public record ApproveUserRequest(string? Reason);
+
 public record CurrentUserDto(
     Guid Id,
     string FirstName,

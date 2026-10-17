@@ -57,8 +57,33 @@ Granular permission strings follow the pattern `{Module}.{Entity}.{Action}`:
 | :--- | :--- | :---: | :---: | :--- |
 | **Health Check** | `/health`, `/api/v1/health` | ✓ | ✓ | None |
 | **OpenAPI Docs** | `/api/docs`, `/api/openapi.json` | ✓ | ✓ | None |
-| **Auth Endpoints** | `/api/auth/login`, `/api/auth/refresh` | ✓ | ✓ | None |
+| **Auth Endpoints** | `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh` | ✓ | ✓ | None |
+| **User Approval & Admin Endpoints** | `/api/users`, `/api/users/pending`, `/api/users/{id}/approve`, `/api/users/{id}/reject` | ✕ | Admin | JWT Bearer (`bearerAuth`) |
+| **Sales Visits Endpoints** | `/api/crm/sales-visits`, `/api/crm/companies/{id}/visits` | ✕ | Staff | JWT Bearer (`bearerAuth`) |
 | **Core CRM / ERP Monolith** | `/api/auth/me`, `/api/sales/*`, `/api/customer/*`, `/api/project/*`, `/api/finance/*`, `/api/support/*`, `/api/platform/*` | ✕ | ✓ | JWT Bearer (`bearerAuth`) |
+
+---
+
+## 5.1 CLI Administrator Creation Tool
+
+Administrators can be created directly and securely via local executable CLI command without relying on public endpoints:
+
+```bash
+dotnet run --project src/Host/CrmErp.Host/CrmErp.Host.csproj -- create-admin --email admin@depix.ir --password 'SecurePassword123!'
+```
+
+If flags are omitted, interactive CLI prompts securely collect inputs with masked password entry. Admin accounts created via CLI are assigned active status immediately.
+
+---
+
+## 5.2 Registration & User Approval Lifecycle
+
+1. **Public Registration**: Users register via `POST /api/auth/register`. Registrations default to `PendingApproval` status and do not issue JWT access tokens.
+2. **Admin User Creation**: Managers create active users directly via `POST /api/users`.
+3. **Approval Lifecycle**:
+   - `GET /api/users/pending`: Retrieves pending registrations.
+   - `POST /api/users/{id}/approve`: Approves account for login access.
+   - `POST /api/users/{id}/reject`: Rejects account request and revokes active refresh tokens.
 
 ---
 

@@ -128,4 +128,17 @@ public class CompaniesController : ControllerBase
         await _archiveCompanyHandler.HandleAsync(command, cancellationToken);
         return Ok(ResponseFactory.Success("Company archived successfully.", string.Empty));
     }
+
+    [HttpGet("{id:guid}/visits")]
+    [Authorize(Policy = "CRM.Company.Read")]
+    public async Task<IActionResult> GetCompanyVisits(
+        Guid id,
+        [FromServices] Application.Services.ISalesVisitService salesVisitService,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        var visits = await salesVisitService.GetVisitsAsync(companyId: id, page: page, pageSize: pageSize, cancellationToken: cancellationToken);
+        return Ok(ApiResponse<Application.DTOs.PagedResult<Application.DTOs.SalesVisitDto>>.SuccessResponse(visits, "Company sales visits retrieved successfully."));
+    }
 }
