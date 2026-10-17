@@ -35,7 +35,16 @@ public partial class AddRegistrationApprovalAndCompanyVisits : Migration
                 ReviewedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                 ReviewedBy = table.Column<Guid>(type: "uuid", nullable: true)
             },
-            constraints: table => table.PrimaryKey("PK_user_approvals", x => x.Id));
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_user_approvals", x => x.Id);
+                table.ForeignKey(
+                    name: "FK_user_approvals_users_UserId",
+                    column: x => x.UserId,
+                    principalTable: "users",
+                    principalColumn: "Id",
+                    onDelete: ReferentialAction.Cascade);
+            });
 
         migrationBuilder.CreateIndex(
             name: "IX_user_approvals_UserId",
