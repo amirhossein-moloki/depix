@@ -65,7 +65,8 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         Email = email;
         Address = address;
         Type = type;
-        SetLocation(latitude, longitude);
+        if (latitude.HasValue || longitude.HasValue)
+            SetLocation(latitude, longitude);
         UpdateTimestamp(DateTime.UtcNow);
     }
 
