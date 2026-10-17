@@ -46,7 +46,7 @@ Approval is enforced by both the login and refresh-token paths. Existing users t
 
 Company creation/update accepts optional latitude and longitude together. Coordinates are range-validated and nullable for existing records.
 
-- GET /api/crm/company-visits/map-points — map-ready companies that have coordinates.
+- GET /api/crm/company-visits/map-points — map-ready business locations.\n- GET /api/crm/company-visits/visit-points — map-ready visit locations, including seller and visit notes.
 - POST /api/crm/company-visits — create a visit report. The seller ID is taken from the authenticated token, not from request input.
 - GET /api/crm/company-visits/company/{companyId} — visit history for a company.
 
