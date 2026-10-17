@@ -18,6 +18,8 @@ public interface IAuthUseCaseService
     Task<List<UserDto>> GetPendingUsersAsync(CancellationToken cancellationToken = default);
     Task<UserDto> ApproveUserAsync(Guid targetUserId, Guid adminUserId, CancellationToken cancellationToken = default);
     Task<UserDto> RejectUserAsync(Guid targetUserId, Guid adminUserId, string? reason = null, CancellationToken cancellationToken = default);
+    Task ResetPasswordAsync(Guid userId, ResetPasswordRequest request, CancellationToken cancellationToken = default);
+    Task<UserDto> ResetUserPasswordByAdminAsync(Guid targetUserId, Guid adminUserId, AdminResetPasswordRequest request, CancellationToken cancellationToken = default);
 }
 
 public class AuthUseCaseService : IAuthUseCaseService
@@ -337,6 +339,65 @@ public class AuthUseCaseService : IAuthUseCaseService
 
         await _userRepository.UpdateAsync(user, cancellationToken);
         await _auditEventLogger.LogAsync("USER_REJECTED", user.Id, $"User rejected by Admin ID: {adminUserId}. Reason: {reason}", cancellationToken);
+
+        var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+        return MapToUserDto(user, roles.Select(r => r.Name).ToList());
+    }
+
+    public async Task ResetPasswordAsync(Guid userId, ResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.CurrentPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            throw new ValidationException("Current password and new password are required.");
+        }
+
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", userId);
+        }
+
+        if (!_passwordHasherService.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        {
+            await _auditEventLogger.LogAsync("PASSWORD_RESET_FAILURE", user.Id, "Failed password reset attempt due to incorrect current password", cancellationToken);
+            throw new UnauthorizedException("Incorrect current password.");
+        }
+
+        var newPasswordHash = _passwordHasherService.HashPassword(request.NewPassword);
+        user.UpdatePassword(newPasswordHash);
+
+        foreach (var token in user.RefreshTokens.Where(rt => rt.IsActive))
+        {
+            token.Revoke();
+        }
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        await _auditEventLogger.LogAsync("PASSWORD_RESET_SUCCESS", user.Id, "User reset their password successfully", cancellationToken);
+    }
+
+    public async Task<UserDto> ResetUserPasswordByAdminAsync(Guid targetUserId, Guid adminUserId, AdminResetPasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            throw new ValidationException("New password is required.");
+        }
+
+        var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", targetUserId);
+        }
+
+        var newPasswordHash = _passwordHasherService.HashPassword(request.NewPassword);
+        user.UpdatePassword(newPasswordHash);
+
+        foreach (var token in user.RefreshTokens.Where(rt => rt.IsActive))
+        {
+            token.Revoke();
+        }
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        await _auditEventLogger.LogAsync("USER_PASSWORD_RESET_BY_ADMIN", user.Id, $"Password reset by Admin ID: {adminUserId}", cancellationToken);
 
         var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
         return MapToUserDto(user, roles.Select(r => r.Name).ToList());

@@ -54,6 +54,15 @@ public class UsersController : ControllerBase
         return Ok(ApiResponse<UserDto>.SuccessResponse(rejectedUser, "User rejected successfully."));
     }
 
+    [HttpPost("{id:guid}/reset-password")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ResetUserPassword(Guid id, [FromBody] AdminResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var currentAdminId = GetCurrentUserId();
+        var user = await _authUseCaseService.ResetUserPasswordByAdminAsync(id, currentAdminId, request, cancellationToken);
+        return Ok(ApiResponse<UserDto>.SuccessResponse(user, "User password reset successfully."));
+    }
+
     private Guid GetCurrentUserId()
     {
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;

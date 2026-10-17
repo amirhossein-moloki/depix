@@ -66,4 +66,18 @@ public class AuthController : ControllerBase
         var user = await _authUseCaseService.GetCurrentUserAsync(userId, cancellationToken);
         return Ok(ApiResponse<CurrentUserDto>.SuccessResponse(user, "User details retrieved successfully."));
     }
+
+    [HttpPost("reset-password")]
+    [Authorize]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+        {
+            return Unauthorized(ApiResponse.FailureResponse("Unauthorized access."));
+        }
+
+        await _authUseCaseService.ResetPasswordAsync(userId, request, cancellationToken);
+        return Ok(ApiResponse.SuccessResponse("Password reset successfully."));
+    }
 }
