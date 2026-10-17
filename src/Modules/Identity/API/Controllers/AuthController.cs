@@ -19,6 +19,14 @@ public class AuthController : ControllerBase
         _authUseCaseService = authUseCaseService;
     }
 
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+    {
+        var userId = await _authUseCaseService.RegisterAsync(request, cancellationToken);
+        return Accepted(new { userId, status = "Pending", message = "Registration received. An administrator must approve the account before login." });
+    }
+
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)

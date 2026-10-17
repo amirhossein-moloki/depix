@@ -21,6 +21,7 @@ public static class DependencyInjection
 
         services.AddScoped<IdentityRepositories>();
         services.AddScoped<IUserRepository>(sp => sp.GetRequiredService<IdentityRepositories>());
+        services.AddScoped<IUserApprovalRepository>(sp => sp.GetRequiredService<IdentityRepositories>());
         services.AddScoped<IRoleRepository>(sp => sp.GetRequiredService<IdentityRepositories>());
         services.AddScoped<IPermissionRepository>(sp => sp.GetRequiredService<IdentityRepositories>());
         services.AddScoped<IRefreshTokenRepository>(sp => sp.GetRequiredService<IdentityRepositories>());

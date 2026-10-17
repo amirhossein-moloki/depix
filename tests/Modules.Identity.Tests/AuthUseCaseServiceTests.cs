@@ -13,6 +13,7 @@ public class AuthUseCaseServiceTests
 {
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly Mock<IRoleRepository> _roleRepoMock = new();
+    private readonly Mock<IUserApprovalRepository> _approvalRepoMock = new();
     private readonly Mock<IPermissionRepository> _permissionRepoMock = new();
     private readonly Mock<IRefreshTokenRepository> _refreshTokenRepoMock = new();
     private readonly Mock<IJwtTokenService> _jwtServiceMock = new();
@@ -26,6 +27,7 @@ public class AuthUseCaseServiceTests
         _service = new AuthUseCaseService(
             _userRepoMock.Object,
             _roleRepoMock.Object,
+            _approvalRepoMock.Object,
             _permissionRepoMock.Object,
             _refreshTokenRepoMock.Object,
             _jwtServiceMock.Object,
@@ -82,4 +84,17 @@ public class AuthUseCaseServiceTests
         await Assert.ThrowsAsync<UnauthorizedException>(() =>
             _service.LoginAsync(new LoginRequest("john@example.com", "WrongPassword")));
     }
+    [Fact]
+    public async Task LoginAsync_PendingApproval_ShouldThrowUnauthorizedException()
+    {
+        var user = User.Create("Jane", "Doe", "jane@example.com", "hashed_pwd");
+        _userRepoMock.Setup(r => r.GetByEmailAsync("jane@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _approvalRepoMock.Setup(r => r.GetByUserIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(UserApproval.CreatePending(user.Id));
+
+        await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            _service.LoginAsync(new LoginRequest("jane@example.com", "Password123!")));
+    }
+
 }
