@@ -80,8 +80,7 @@ public class AuthUseCaseService : IAuthUseCaseService
     {
         var roles = await _roleRepository.GetAllAsync(cancellationToken);
         return roles.Select(r => r.Name)
-            .Where(name => !name.Equals("Super Admin", StringComparison.OrdinalIgnoreCase) &&
-                           !name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            .Where(name => !name.Contains("admin", StringComparison.OrdinalIgnoreCase))
             .OrderBy(name => name)
             .ToList();
     }
@@ -113,8 +112,7 @@ public class AuthUseCaseService : IAuthUseCaseService
 
         var role = await _roleRepository.GetByNameAsync(roleName.Trim(), cancellationToken)
             ?? throw new ValidationException("The requested role does not exist.");
-        if (role.Name.Equals("Super Admin", StringComparison.OrdinalIgnoreCase) ||
-            role.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+        if (role.Name.Contains("admin", StringComparison.OrdinalIgnoreCase))
             throw new ValidationException("Public registrations cannot be assigned an administrator role.");
 
         user.AddRole(role.Id);
