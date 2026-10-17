@@ -147,6 +147,29 @@ Endpoints when running via Docker Compose:
 - **Swagger Documentation**: `http://localhost:8080/api/docs`
 - **Health Check**: `http://localhost:8080/health`
 
+### Initial Admin Creation CLI & User Approval Workflow
+Initial system administrator accounts can be created safely via CLI:
+```bash
+# Interactively prompt for admin email and password (passwords hidden without terminal echo)
+dotnet run --project src/Host/CrmErp.Host/CrmErp.Host.csproj -- create-admin
+
+# Non-interactive CLI option
+dotnet run --project src/Host/CrmErp.Host/CrmErp.Host.csproj -- create-admin --email admin@depix.ir --password SecureAdminPassword123!
+```
+
+User Account Lifecycle & Approval:
+1. Public User Registration (`POST /api/auth/register`): Creates user account with status `PendingApproval`. No access/refresh token is issued until approved.
+2. Admin List Pending Users (`GET /api/identity/users/pending`): Lists accounts requiring verification.
+3. Admin Approval / Rejection (`POST /api/identity/users/{id}/approve` or `/reject`): Approved accounts transition to `Active` status; rejected accounts cannot obtain JWT access tokens.
+4. Admin User Creation (`POST /api/identity/users`): Admins can directly create user accounts pre-approved with assigned roles.
+
+### Sales Visit Reporting & Geographic Coordinates
+- **Main Business Geo-Location**: `Company` aggregate root supports `Latitude` (-90 to +90) and `Longitude` (-180 to +180) coordinates.
+- **Salesperson Visit Reports (`SalesVisit`)**:
+  - `POST /api/crm/visits`: Registers an independent visit report. The salesperson identity is strictly bound to the authenticated user token claim (`sub`). Optional visit location coordinates (`Latitude`, `Longitude`, `LocationSource`) can be submitted independently of the business main location.
+  - `GET /api/crm/visits`: Retrieves paged visit logs with filters for company, salesperson, date range, and visit result.
+  - `GET /api/crm/companies/{companyId}/visits`: Retrieves full visit history for a given business.
+
 ### Manual Execution & Testing
 ```bash
 # Restore & Build (Debug & Release)

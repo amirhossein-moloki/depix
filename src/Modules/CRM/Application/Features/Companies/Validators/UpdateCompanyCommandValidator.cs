@@ -32,5 +32,17 @@ public class UpdateCompanyCommandValidator : AbstractValidator<UpdateCompanyComm
             .NotEmpty().WithMessage("Company type is required.")
             .Must(type => new[] { "LEAD", "CUSTOMER", "INACTIVE" }.Contains(type.ToUpperInvariant()))
             .WithMessage("Company type must be LEAD, CUSTOMER, or INACTIVE.");
+
+        RuleFor(x => x.Latitude)
+            .InclusiveBetween(-90.0, 90.0).When(x => x.Latitude.HasValue)
+            .WithMessage("Latitude must be between -90 and 90 degrees.");
+
+        RuleFor(x => x.Longitude)
+            .InclusiveBetween(-180.0, 180.0).When(x => x.Longitude.HasValue)
+            .WithMessage("Longitude must be between -180 and 180 degrees.");
+
+        RuleFor(x => x)
+            .Must(x => x.Latitude.HasValue == x.Longitude.HasValue)
+            .WithMessage("Both latitude and longitude must be provided together, or both must be null.");
     }
 }

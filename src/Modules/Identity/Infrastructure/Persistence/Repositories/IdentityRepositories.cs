@@ -13,8 +13,8 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
         _dbContext = dbContext;
     }
 
-    // IUserRepository & IRoleRepository GetByIdAsync
-    async Task<User?> IUserRepository.GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    // IUserRepository
+    public async Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Set<User>()
             .Include(u => u.UserRoles)
@@ -35,6 +35,23 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
             .Include(u => u.UserRoles)
             .Include(u => u.RefreshTokens)
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), cancellationToken);
+    }
+
+    public async Task<List<User>> GetUsersByStatusAsync(UserStatus status, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<User>()
+            .Include(u => u.UserRoles)
+            .Where(u => u.Status == status)
+            .OrderByDescending(u => u.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<User>> GetAllUsersAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<User>()
+            .Include(u => u.UserRoles)
+            .OrderByDescending(u => u.CreatedAt)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)

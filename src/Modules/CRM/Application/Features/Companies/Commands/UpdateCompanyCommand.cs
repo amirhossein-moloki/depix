@@ -16,7 +16,9 @@ public record UpdateCompanyCommand(
     string Phone,
     string Email,
     string AddressText,
-    string Type
+    string Type,
+    double? Latitude = null,
+    double? Longitude = null
 ) : ICommand<CompanyDto>;
 
 public class UpdateCompanyCommandHandler : ICommandHandler<UpdateCompanyCommand, CompanyDto>
@@ -46,7 +48,9 @@ public class UpdateCompanyCommandHandler : ICommandHandler<UpdateCompanyCommand,
             command.Phone,
             command.Email,
             address,
-            command.Type
+            command.Type,
+            command.Latitude,
+            command.Longitude
         );
 
         _companyRepository.Update(company);

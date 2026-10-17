@@ -11,6 +11,8 @@ public record CompanyDto(
     string Email,
     AddressDto Address,
     string Type,
+    double? Latitude,
+    double? Longitude,
     DateTime CreatedAt,
     DateTime? UpdatedAt,
     bool IsDeleted,
@@ -25,6 +27,8 @@ public record CompanyListDto(
     string Phone,
     string Email,
     string Type,
+    double? Latitude,
+    double? Longitude,
     DateTime CreatedAt
 );
 
@@ -35,7 +39,9 @@ public record CreateCompanyRequest(
     string Phone,
     string Email,
     string AddressText,
-    string Type = "LEAD"
+    string Type = "LEAD",
+    double? Latitude = null,
+    double? Longitude = null
 );
 
 public record UpdateCompanyRequest(
@@ -45,7 +51,14 @@ public record UpdateCompanyRequest(
     string Phone,
     string Email,
     string AddressText,
-    string Type
+    string Type,
+    double? Latitude = null,
+    double? Longitude = null
+);
+
+public record UpdateCompanyLocationRequest(
+    double? Latitude,
+    double? Longitude
 );
 
 public record PagedResult<T>(

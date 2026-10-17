@@ -4,9 +4,11 @@ namespace Modules.Identity.Domain.Entities;
 
 public enum UserStatus
 {
+    PendingApproval = 0,
     Active = 1,
     Inactive = 2,
-    LockedOut = 3
+    Rejected = 3,
+    LockedOut = 4
 }
 
 public class User : AuditableAggregateRoot
@@ -22,12 +24,26 @@ public class User : AuditableAggregateRoot
     public UserStatus Status { get; private set; } = UserStatus.Active;
     public DateTime? LastLoginAt { get; private set; }
 
+    public Guid? ApprovedBy { get; private set; }
+    public DateTime? ApprovedAt { get; private set; }
+    public string? RejectionReason { get; private set; }
+
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
 
     private User() { }
 
-    public User(Guid id, string firstName, string lastName, string email, string passwordHash, string? phone = null, UserStatus status = UserStatus.Active)
+    public User(
+        Guid id,
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        string? phone = null,
+        UserStatus status = UserStatus.Active,
+        Guid? approvedBy = null,
+        DateTime? approvedAt = null,
+        string? rejectionReason = null)
         : base(id)
     {
         FirstName = firstName;
@@ -36,11 +52,37 @@ public class User : AuditableAggregateRoot
         PasswordHash = passwordHash;
         Phone = phone;
         Status = status;
+        ApprovedBy = approvedBy;
+        ApprovedAt = approvedAt;
+        RejectionReason = rejectionReason;
     }
 
     public static User Create(string firstName, string lastName, string email, string passwordHash, string? phone = null)
     {
         return new User(Guid.NewGuid(), firstName, lastName, email, passwordHash, phone, UserStatus.Active);
+    }
+
+    public static User CreatePending(string firstName, string lastName, string email, string passwordHash, string? phone = null)
+    {
+        return new User(Guid.NewGuid(), firstName, lastName, email, passwordHash, phone, UserStatus.PendingApproval);
+    }
+
+    public void Approve(Guid adminId)
+    {
+        Status = UserStatus.Active;
+        ApprovedBy = adminId;
+        ApprovedAt = DateTime.UtcNow;
+        RejectionReason = null;
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void Reject(Guid adminId, string? reason = null)
+    {
+        Status = UserStatus.Rejected;
+        ApprovedBy = adminId;
+        ApprovedAt = DateTime.UtcNow;
+        RejectionReason = reason;
+        UpdateTimestamp(DateTime.UtcNow);
     }
 
     public void UpdateProfile(string firstName, string lastName, string email, string? phone = null)

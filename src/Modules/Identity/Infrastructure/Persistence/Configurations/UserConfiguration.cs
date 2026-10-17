@@ -39,6 +39,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(u => u.LastLoginAt);
 
+        builder.Property(u => u.ApprovedBy);
+
+        builder.Property(u => u.ApprovedAt);
+
+        builder.Property(u => u.RejectionReason)
+            .HasMaxLength(500);
+
         builder.Property(u => u.CreatedAt)
             .IsRequired();
 

@@ -54,7 +54,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         if (user == null || user.Status != UserStatus.Active || !_passwordHasherService.VerifyPassword(request.Password, user.PasswordHash))
         {
             await _auditEventLogger.LogAsync("LOGIN_FAILURE", user?.Id, $"Failed login attempt for email: {request.Email}", cancellationToken);
-            throw new UnauthorizedException("Invalid email or password.");
+            throw new UnauthorizedException("Invalid credentials or account is not active.");
         }
 
         var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
@@ -105,7 +105,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         var user = await _userRepository.GetByIdAsync(refreshToken.UserId, cancellationToken);
         if (user == null || user.Status != UserStatus.Active)
         {
-            throw new UnauthorizedException("User account is inactive or not found.");
+            throw new UnauthorizedException("User account is inactive or pending approval.");
         }
 
         // Rotate Refresh Token

@@ -15,6 +15,8 @@ public static class CompanyMappingExtensions
             company.Email,
             new AddressDto(company.Address.Text),
             company.Type,
+            company.Latitude,
+            company.Longitude,
             company.CreatedAt,
             company.UpdatedAt,
             company.IsDeleted,
@@ -32,6 +34,8 @@ public static class CompanyMappingExtensions
             company.Phone,
             company.Email,
             company.Type,
+            company.Latitude,
+            company.Longitude,
             company.CreatedAt
         );
     }

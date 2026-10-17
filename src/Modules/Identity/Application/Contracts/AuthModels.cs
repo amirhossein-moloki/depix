@@ -28,3 +28,45 @@ public record CurrentUserDto(
     List<string> Roles,
     List<string> Permissions
 );
+
+public record RegisterRequest(
+    string FirstName,
+    string LastName,
+    string Email,
+    string Password,
+    string? Phone
+);
+
+public record RegisterResult(
+    Guid UserId,
+    string Email,
+    string Status,
+    string Message
+);
+
+public record CreateUserByAdminRequest(
+    string FirstName,
+    string LastName,
+    string Email,
+    string Password,
+    string? Phone,
+    string? RoleName
+);
+
+public record RejectUserRequest(
+    string? Reason
+);
+
+public record UserSummaryDto(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    string? Phone,
+    string Status,
+    DateTime CreatedAt,
+    Guid? ApprovedBy,
+    DateTime? ApprovedAt,
+    string? RejectionReason,
+    List<string> Roles
+);

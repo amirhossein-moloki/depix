@@ -21,6 +21,10 @@ using Modules.CRM.Application.Features.SalesNotes.Commands;
 using Modules.CRM.Application.Features.SalesNotes.DTOs;
 using Modules.CRM.Application.Features.SalesNotes.Queries;
 using Modules.CRM.Application.Features.SalesNotes.Validators;
+using Modules.CRM.Application.Features.SalesVisits.Commands;
+using Modules.CRM.Application.Features.SalesVisits.DTOs;
+using Modules.CRM.Application.Features.SalesVisits.Queries;
+using Modules.CRM.Application.Features.SalesVisits.Validators;
 
 namespace Modules.CRM.Application;
 
@@ -74,6 +78,11 @@ public static class DependencyInjection
         services.AddScoped<IQueryHandler<GetSalesNotesQuery, PagedResult<SalesNoteListItemDto>>, GetSalesNotesQueryHandler>();
         services.AddScoped<IQueryHandler<GetLeadSalesNotesQuery, LeadSalesContextDto>, GetLeadSalesNotesQueryHandler>();
 
+        // SalesVisits Handlers
+        services.AddScoped<ICommandHandler<CreateSalesVisitCommand, SalesVisitDto>, CreateSalesVisitCommandHandler>();
+        services.AddScoped<IQueryHandler<GetSalesVisitsQuery, PagedResult<SalesVisitListDto>>, GetSalesVisitsQueryHandler>();
+        services.AddScoped<IQueryHandler<GetCompanyVisitHistoryQuery, List<SalesVisitDto>>, GetCompanyVisitHistoryQueryHandler>();
+
         // Validators
         services.AddScoped<IValidator<CreateCompanyCommand>, CreateCompanyCommandValidator>();
         services.AddScoped<IValidator<UpdateCompanyCommand>, UpdateCompanyCommandValidator>();
@@ -92,6 +101,8 @@ public static class DependencyInjection
 
         services.AddScoped<IValidator<CreateSalesNoteCommand>, CreateSalesNoteCommandValidator>();
         services.AddScoped<IValidator<UpdateSalesNoteCommand>, UpdateSalesNoteCommandValidator>();
+
+        services.AddScoped<IValidator<CreateSalesVisitCommand>, CreateSalesVisitCommandValidator>();
 
         return services;
     }

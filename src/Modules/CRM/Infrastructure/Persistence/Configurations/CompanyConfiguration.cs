@@ -24,6 +24,9 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.Email).HasMaxLength(250);
         builder.Property(c => c.Type).HasMaxLength(50).IsRequired();
 
+        builder.Property(c => c.Latitude);
+        builder.Property(c => c.Longitude);
+
         builder.OwnsOne(c => c.Address, a =>
         {
             a.Property(ad => ad.Text).HasColumnName("address");

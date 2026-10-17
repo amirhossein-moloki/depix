@@ -16,6 +16,9 @@ public class Company : AuditableAggregateRoot, ISoftDelete
     public Address Address { get; private set; } = new Address(string.Empty);
     public string Type { get; private set; } = "LEAD"; // LEAD, CUSTOMER, INACTIVE
 
+    public double? Latitude { get; private set; }
+    public double? Longitude { get; private set; }
+
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
@@ -25,7 +28,17 @@ public class Company : AuditableAggregateRoot, ISoftDelete
 
     private Company() { }
 
-    public Company(Guid id, string name, string industry, string website, string phone, string email, Address address, string type = "LEAD") : base(id)
+    public Company(
+        Guid id,
+        string name,
+        string industry,
+        string website,
+        string phone,
+        string email,
+        Address address,
+        string type = "LEAD",
+        double? latitude = null,
+        double? longitude = null) : base(id)
     {
         Name = name;
         Industry = industry;
@@ -34,11 +47,45 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         Email = email;
         Address = address;
         Type = type;
+        SetLocation(latitude, longitude);
     }
 
-    public static Company Create(string name, string industry, string website, string phone, string email, Address address, string type = "LEAD")
+    public static Company Create(
+        string name,
+        string industry,
+        string website,
+        string phone,
+        string email,
+        Address address,
+        string type = "LEAD",
+        double? latitude = null,
+        double? longitude = null)
     {
-        return new Company(Guid.NewGuid(), name, industry, website, phone, email, address, type);
+        return new Company(Guid.NewGuid(), name, industry, website, phone, email, address, type, latitude, longitude);
+    }
+
+    public void SetLocation(double? latitude, double? longitude)
+    {
+        if (latitude.HasValue != longitude.HasValue)
+        {
+            throw new ArgumentException("Both latitude and longitude must be provided together, or both must be null.");
+        }
+
+        if (latitude.HasValue)
+        {
+            if (latitude.Value < -90.0 || latitude.Value > 90.0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(latitude), "Latitude must be between -90 and 90 degrees.");
+            }
+            if (longitude!.Value < -180.0 || longitude.Value > 180.0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(longitude), "Longitude must be between -180 and 180 degrees.");
+            }
+        }
+
+        Latitude = latitude;
+        Longitude = longitude;
+        UpdateTimestamp(DateTime.UtcNow);
     }
 
     public void MarkAsCustomer()
@@ -53,7 +100,16 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         UpdateTimestamp(DateTime.UtcNow);
     }
 
-    public void UpdateInfo(string name, string industry, string website, string phone, string email, Address address, string type)
+    public void UpdateInfo(
+        string name,
+        string industry,
+        string website,
+        string phone,
+        string email,
+        Address address,
+        string type,
+        double? latitude = null,
+        double? longitude = null)
     {
         Name = name;
         Industry = industry;
@@ -62,7 +118,7 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         Email = email;
         Address = address;
         Type = type;
-        UpdateTimestamp(DateTime.UtcNow);
+        SetLocation(latitude, longitude);
     }
 
     public void AddContact(Contact contact)

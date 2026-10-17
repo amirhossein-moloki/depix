@@ -206,6 +206,13 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+if (args.Length > 0 && args[0].Equals("create-admin", StringComparison.OrdinalIgnoreCase))
+{
+    var exitCode = await CrmErp.Host.Services.AdminCliHandler.RunAsync(app.Services, args);
+    Environment.Exit(exitCode);
+    return;
+}
+
 using (var scope = app.Services.CreateScope())
 {
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();

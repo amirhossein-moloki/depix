@@ -13,10 +13,22 @@ namespace Modules.Identity.API.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthUseCaseService _authUseCaseService;
+    private readonly IUserManagementUseCaseService _userManagementService;
 
-    public AuthController(IAuthUseCaseService authUseCaseService)
+    public AuthController(
+        IAuthUseCaseService authUseCaseService,
+        IUserManagementUseCaseService userManagementService)
     {
         _authUseCaseService = authUseCaseService;
+        _userManagementService = userManagementService;
+    }
+
+    [HttpPost("register")]
+    [AllowAnonymous]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _userManagementService.RegisterPublicAsync(request, cancellationToken);
+        return Ok(ApiResponse<RegisterResult>.SuccessResponse(result, result.Message));
     }
 
     [HttpPost("login")]

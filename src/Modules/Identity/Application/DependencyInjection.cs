@@ -8,6 +8,7 @@ public static class DependencyInjection
     public static IServiceCollection AddIdentityApplication(this IServiceCollection services)
     {
         services.AddScoped<IAuthUseCaseService, AuthUseCaseService>();
+        services.AddScoped<IUserManagementUseCaseService, UserManagementService>();
         return services;
     }
 }
