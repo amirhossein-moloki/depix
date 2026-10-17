@@ -18,6 +18,7 @@ public class AuthUseCaseServiceTests
     private readonly Mock<IJwtTokenService> _jwtServiceMock = new();
     private readonly Mock<IPasswordHasherService> _hasherMock = new();
     private readonly Mock<IAuditEventLogger> _auditLoggerMock = new();
+    private readonly Mock<Microsoft.Extensions.Logging.ILogger<AuthUseCaseService>> _loggerMock = new();
 
     private readonly AuthUseCaseService _service;
 
@@ -30,7 +31,8 @@ public class AuthUseCaseServiceTests
             _refreshTokenRepoMock.Object,
             _jwtServiceMock.Object,
             _hasherMock.Object,
-            _auditLoggerMock.Object
+            _auditLoggerMock.Object,
+            _loggerMock.Object
         );
     }
 

@@ -54,9 +54,11 @@ services:
       - Cors__AllowedOrigins__0=${CORS_ALLOWED_ORIGIN:-https://depix.ir}
       - Cors__AllowedOrigins__1=${CORS_ALLOWED_ORIGIN_WWW:-https://www.depix.ir}
       - OPENAPI_ENABLED=${OPENAPI_ENABLED:-true}
+      - LOG_DIR=/app/logs
       - FileStorage__BasePath=/app/uploads
     volumes:
       - uploads_prod_data:/app/uploads
+      - logs_prod_data:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -87,3 +89,4 @@ networks:
 volumes:
   postgres_prod_data:
   uploads_prod_data:
+  logs_prod_data:

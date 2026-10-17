@@ -78,6 +78,7 @@ RUN dotnet publish src/Host/CrmErp.Host/CrmErp.Host.csproj -c Release -o /app/pu
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+RUN mkdir -p /app/logs
 EXPOSE 5000
 
 ENV ASPNETCORE_URLS=http://+:5000

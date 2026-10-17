@@ -5,6 +5,7 @@ using BuildingBlocks.Common.Responses;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Modules.Sales.Application.Features.Opportunities.Commands;
 using Modules.Sales.Application.Features.Opportunities.DTOs;
 using Modules.Sales.Application.Features.Opportunities.Queries;
@@ -36,6 +37,7 @@ public class OpportunitiesController : ControllerBase
     private readonly IValidator<ChangeOpportunityStageCommand> _changeStageValidator;
     private readonly IValidator<MarkOpportunityWonCommand> _markWonValidator;
     private readonly IValidator<MarkOpportunityLostCommand> _markLostValidator;
+    private readonly ILogger<OpportunitiesController> _logger;
 
     public OpportunitiesController(
         ICommandHandler<CreateOpportunityCommand, OpportunityDto> createOpportunityHandler,
@@ -54,7 +56,8 @@ public class OpportunitiesController : ControllerBase
         IValidator<AssignOpportunityCommand> assignValidator,
         IValidator<ChangeOpportunityStageCommand> changeStageValidator,
         IValidator<MarkOpportunityWonCommand> markWonValidator,
-        IValidator<MarkOpportunityLostCommand> markLostValidator)
+        IValidator<MarkOpportunityLostCommand> markLostValidator,
+        ILogger<OpportunitiesController> logger)
     {
         _createOpportunityHandler = createOpportunityHandler;
         _updateOpportunityHandler = updateOpportunityHandler;
@@ -73,6 +76,7 @@ public class OpportunitiesController : ControllerBase
         _changeStageValidator = changeStageValidator;
         _markWonValidator = markWonValidator;
         _markLostValidator = markLostValidator;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -103,6 +107,7 @@ public class OpportunitiesController : ControllerBase
         }
 
         var result = await _createOpportunityHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Opportunity {OpportunityId} created successfully with Title '{Title}'", result.Id, result.Title);
         return CreatedAtAction(nameof(GetOpportunityById), new { id = result.Id }, ResponseFactory.Success(result, "Opportunity created successfully."));
     }
 
@@ -246,6 +251,7 @@ public class OpportunitiesController : ControllerBase
         }
 
         var result = await _changeStageHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Opportunity {OpportunityId} stage changed to {Stage}", result.Id, request.Stage);
         return Ok(ResponseFactory.Success(result, "Opportunity stage updated successfully."));
     }
 
@@ -263,6 +269,7 @@ public class OpportunitiesController : ControllerBase
         }
 
         var result = await _markWonHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Opportunity {OpportunityId} marked as WON", result.Id);
         return Ok(ResponseFactory.Success(result, "Opportunity marked as won successfully."));
     }
 
@@ -280,6 +287,7 @@ public class OpportunitiesController : ControllerBase
         }
 
         var result = await _markLostHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Opportunity {OpportunityId} marked as LOST. Reason: {LossReason}", result.Id, request.LossReason);
         return Ok(ResponseFactory.Success(result, "Opportunity marked as lost successfully."));
     }
 
