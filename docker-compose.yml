@@ -25,6 +25,7 @@ services:
     container_name: crmerp-backend
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Development}
+      - LOG_DIR=/app/logs
       - ConnectionStrings__Database=Host=postgres;Port=5432;Database=${POSTGRES_DB:-crm_erp_db};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgrespassword}
       - Jwt__Secret=${Jwt__Secret:-Development_Placeholder_Jwt_Secret_Key_32_Bytes_Long_Minimum!}
       - Jwt__Issuer=${Jwt__Issuer:-CrmErpApi}
@@ -34,6 +35,8 @@ services:
       - Cors__AllowedOrigins__0=${Cors__AllowedOrigins__0:-http://localhost:3000}
       - Cors__AllowedOrigins__1=${Cors__AllowedOrigins__1:-http://localhost:8080}
       - OPENAPI_ENABLED=${OPENAPI_ENABLED:-true}
+    volumes:
+      - crmerp_logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
@@ -81,3 +84,4 @@ networks:
 
 volumes:
   postgres_data:
+  crmerp_logs:

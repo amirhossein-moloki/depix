@@ -1,5 +1,6 @@
 using BuildingBlocks.Common.Exceptions;
 using BuildingBlocks.Common.Responses;
+using Microsoft.Extensions.Logging;
 using Modules.Identity.Application.Common.Interfaces;
 using Modules.Identity.Application.Contracts;
 using Modules.Identity.Domain.Entities;
@@ -31,6 +32,7 @@ public class AuthUseCaseService : IAuthUseCaseService
     private readonly IJwtTokenService _jwtTokenService;
     private readonly IPasswordHasherService _passwordHasherService;
     private readonly IAuditEventLogger _auditEventLogger;
+    private readonly ILogger<AuthUseCaseService> _logger;
 
     public AuthUseCaseService(
         IUserRepository userRepository,
@@ -39,7 +41,8 @@ public class AuthUseCaseService : IAuthUseCaseService
         IRefreshTokenRepository refreshTokenRepository,
         IJwtTokenService jwtTokenService,
         IPasswordHasherService passwordHasherService,
-        IAuditEventLogger auditEventLogger)
+        IAuditEventLogger auditEventLogger,
+        ILogger<AuthUseCaseService> logger)
     {
         _userRepository = userRepository;
         _roleRepository = roleRepository;
@@ -48,6 +51,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         _jwtTokenService = jwtTokenService;
         _passwordHasherService = passwordHasherService;
         _auditEventLogger = auditEventLogger;
+        _logger = logger;
     }
 
     public async Task<LoginResult> LoginAsync(LoginRequest request, string? clientIp = null, CancellationToken cancellationToken = default)
@@ -60,24 +64,28 @@ public class AuthUseCaseService : IAuthUseCaseService
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
         if (user == null || !_passwordHasherService.VerifyPassword(request.Password, user.PasswordHash))
         {
+            _logger.LogWarning("Failed login attempt for user email {Email}", request.Email);
             await _auditEventLogger.LogAsync("LOGIN_FAILURE", user?.Id, $"Failed login attempt for email: {request.Email}", cancellationToken);
             throw new UnauthorizedException("Invalid email or password.");
         }
 
         if (user.Status == UserStatus.PendingApproval)
         {
+            _logger.LogWarning("User {UserId} attempted login while status is PendingApproval", user.Id);
             await _auditEventLogger.LogAsync("LOGIN_FAILURE", user.Id, "Attempted login while pending admin approval.", cancellationToken);
             throw new ForbiddenException("Account is pending administrator approval.");
         }
 
         if (user.Status == UserStatus.Rejected)
         {
+            _logger.LogWarning("User {UserId} attempted login on rejected account", user.Id);
             await _auditEventLogger.LogAsync("LOGIN_FAILURE", user.Id, "Attempted login on rejected account.", cancellationToken);
             throw new ForbiddenException("Account registration request was rejected by an administrator.");
         }
 
         if (user.Status != UserStatus.Active)
         {
+            _logger.LogWarning("User {UserId} attempted login on inactive/locked account ({Status})", user.Id, user.Status);
             await _auditEventLogger.LogAsync("LOGIN_FAILURE", user.Id, "Attempted login on inactive or locked account.", cancellationToken);
             throw new ForbiddenException("Account is inactive or locked out.");
         }
@@ -98,6 +106,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         user.RecordLogin();
 
         await _userRepository.UpdateAsync(user, cancellationToken);
+        _logger.LogInformation("User {UserId} logged in successfully", user.Id);
         await _auditEventLogger.LogAsync("LOGIN_SUCCESS", user.Id, "User logged in successfully", cancellationToken);
 
         return new LoginResult(
@@ -155,6 +164,7 @@ public class AuthUseCaseService : IAuthUseCaseService
 
         var newAccessToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Email, roleNames, permissionCodes);
 
+        _logger.LogInformation("Refresh token rotated successfully for user {UserId}", user.Id);
         await _auditEventLogger.LogAsync("REFRESH_TOKEN", user.Id, "Refresh token rotated successfully", cancellationToken);
 
         return new LoginResult(
@@ -183,6 +193,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         {
             refreshToken.Revoke();
             await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);
+            _logger.LogInformation("User {UserId} logged out successfully", refreshToken.UserId);
             await _auditEventLogger.LogAsync("LOGOUT", refreshToken.UserId, "User logged out", cancellationToken);
         }
     }
@@ -241,6 +252,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         await _userRepository.AddAsync(newUser, cancellationToken);
+        _logger.LogInformation("User {UserId} registered via public portal with PendingApproval status", newUser.Id);
         await _auditEventLogger.LogAsync("USER_REGISTERED", newUser.Id, "User registered via public portal (Pending Approval).", cancellationToken);
 
         var userRoles = await _roleRepository.GetRolesByUserIdAsync(newUser.Id, cancellationToken);
@@ -286,6 +298,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         await _userRepository.AddAsync(newUser, cancellationToken);
+        _logger.LogInformation("User {UserId} created by administrator", newUser.Id);
         await _auditEventLogger.LogAsync("USER_CREATED_BY_ADMIN", newUser.Id, "User created by administrator.", cancellationToken);
 
         var assignedRoles = await _roleRepository.GetRolesByUserIdAsync(newUser.Id, cancellationToken);
@@ -316,6 +329,7 @@ public class AuthUseCaseService : IAuthUseCaseService
 
         user.Approve(adminUserId);
         await _userRepository.UpdateAsync(user, cancellationToken);
+        _logger.LogInformation("User {UserId} approved by Admin {AdminId}", user.Id, adminUserId);
         await _auditEventLogger.LogAsync("USER_APPROVED", user.Id, $"User approved by Admin ID: {adminUserId}", cancellationToken);
 
         var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
@@ -338,6 +352,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         await _userRepository.UpdateAsync(user, cancellationToken);
+        _logger.LogInformation("User {UserId} rejected by Admin {AdminId}", user.Id, adminUserId);
         await _auditEventLogger.LogAsync("USER_REJECTED", user.Id, $"User rejected by Admin ID: {adminUserId}. Reason: {reason}", cancellationToken);
 
         var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
@@ -372,6 +387,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         await _userRepository.UpdateAsync(user, cancellationToken);
+        _logger.LogInformation("Password reset successfully for user {UserId}", user.Id);
         await _auditEventLogger.LogAsync("PASSWORD_RESET_SUCCESS", user.Id, "User reset their password successfully", cancellationToken);
     }
 
@@ -397,6 +413,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         await _userRepository.UpdateAsync(user, cancellationToken);
+        _logger.LogInformation("Password for user {UserId} reset by Admin {AdminId}", user.Id, adminUserId);
         await _auditEventLogger.LogAsync("USER_PASSWORD_RESET_BY_ADMIN", user.Id, $"Password reset by Admin ID: {adminUserId}", cancellationToken);
 
         var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);

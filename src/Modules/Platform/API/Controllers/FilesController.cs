@@ -6,6 +6,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Modules.Platform.Application.DTOs;
 
 namespace Modules.Platform.API.Controllers;
@@ -21,6 +22,7 @@ public class FilesController : ControllerBase
     private readonly IQueryHandler<GetFilesByEntityQuery, List<FileAssetDto>> _getFilesByEntityHandler;
     private readonly IQueryHandler<DownloadFileQuery, FileDownloadDto> _downloadFileHandler;
     private readonly IValidator<UploadFileCommand> _uploadValidator;
+    private readonly ILogger<FilesController> _logger;
 
     public FilesController(
         ICommandHandler<UploadFileCommand, FileAssetDto> uploadFileHandler,
@@ -28,7 +30,8 @@ public class FilesController : ControllerBase
         IQueryHandler<GetFileMetadataQuery, FileAssetDto> getFileMetadataHandler,
         IQueryHandler<GetFilesByEntityQuery, List<FileAssetDto>> getFilesByEntityHandler,
         IQueryHandler<DownloadFileQuery, FileDownloadDto> downloadFileHandler,
-        IValidator<UploadFileCommand> uploadValidator)
+        IValidator<UploadFileCommand> uploadValidator,
+        ILogger<FilesController> logger)
     {
         _uploadFileHandler = uploadFileHandler;
         _deleteFileHandler = deleteFileHandler;
@@ -36,6 +39,7 @@ public class FilesController : ControllerBase
         _getFilesByEntityHandler = getFilesByEntityHandler;
         _downloadFileHandler = downloadFileHandler;
         _uploadValidator = uploadValidator;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -78,6 +82,7 @@ public class FilesController : ControllerBase
         }
 
         var result = await _uploadFileHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("File {FileId} ({FileName}) uploaded successfully for {EntityType} {EntityId}", result.Id, file.FileName, entityType, entityId);
         return CreatedAtAction(nameof(GetFileMetadata), new { id = result.Id }, ResponseFactory.Success(result, "File uploaded successfully."));
     }
 
@@ -120,6 +125,7 @@ public class FilesController : ControllerBase
 
         var command = new DeleteFileCommand(id, deletedBy);
         await _deleteFileHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("File {FileId} deleted successfully by User {UserId}", id, deletedBy);
         return Ok(ResponseFactory.Success("File deleted successfully.", string.Empty));
     }
 }

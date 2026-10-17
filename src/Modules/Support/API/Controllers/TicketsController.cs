@@ -4,6 +4,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Modules.Support.Application.Commands;
 using Modules.Support.Application.DTOs;
 using Modules.Support.Application.Queries;
@@ -33,6 +34,7 @@ public class TicketsController : ControllerBase
     private readonly IQueryHandler<GetCustomerTicketsQuery, List<TicketListItemDto>> _getCustomerTicketsHandler;
     private readonly IQueryHandler<GetProjectTicketsQuery, List<TicketListItemDto>> _getProjectTicketsHandler;
     private readonly IQueryHandler<GetTicketCommentsQuery, List<TicketCommentDto>> _getTicketCommentsHandler;
+    private readonly ILogger<TicketsController> _logger;
 
     public TicketsController(
         ICommandHandler<CreateTicketCommand, TicketDetailDto> createTicketHandler,
@@ -50,7 +52,8 @@ public class TicketsController : ControllerBase
         IQueryHandler<GetTicketsQuery, PagedResult<TicketListItemDto>> getTicketsHandler,
         IQueryHandler<GetCustomerTicketsQuery, List<TicketListItemDto>> getCustomerTicketsHandler,
         IQueryHandler<GetProjectTicketsQuery, List<TicketListItemDto>> getProjectTicketsHandler,
-        IQueryHandler<GetTicketCommentsQuery, List<TicketCommentDto>> getTicketCommentsHandler)
+        IQueryHandler<GetTicketCommentsQuery, List<TicketCommentDto>> getTicketCommentsHandler,
+        ILogger<TicketsController> logger)
     {
         _createTicketHandler = createTicketHandler;
         _updateTicketHandler = updateTicketHandler;
@@ -68,6 +71,7 @@ public class TicketsController : ControllerBase
         _getCustomerTicketsHandler = getCustomerTicketsHandler;
         _getProjectTicketsHandler = getProjectTicketsHandler;
         _getTicketCommentsHandler = getTicketCommentsHandler;
+        _logger = logger;
     }
 
     [HttpPost("tickets")]
@@ -91,6 +95,7 @@ public class TicketsController : ControllerBase
 
         await validator.ValidateAndThrowAsync(command, cancellationToken);
         var result = await _createTicketHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Support ticket {TicketId} created successfully for Customer {CustomerId}", result.Id, request.CustomerId);
 
         return CreatedAtAction(nameof(GetTicketById), new { id = result.Id }, ResponseFactory.Success(result, "Support ticket created successfully."));
     }
@@ -245,6 +250,7 @@ public class TicketsController : ControllerBase
         var command = new ResolveTicketCommand(id, request.Resolution, request.ResolvedAt, User?.Identity?.Name);
         await validator.ValidateAndThrowAsync(command, cancellationToken);
         var result = await _resolveTicketHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Support ticket {TicketId} resolved successfully", result.Id);
 
         return Ok(ResponseFactory.Success(result, "Support ticket resolved successfully."));
     }

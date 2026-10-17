@@ -5,6 +5,7 @@ using BuildingBlocks.Common.Responses;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using BuildingBlocks.Application.Contracts;
 using Modules.Customer.Application.Commands;
 using Modules.Customer.Application.DTOs;
@@ -37,6 +38,7 @@ public class CustomersController : ControllerBase
     private readonly IValidator<ChangeCustomerStatusCommand> _changeStatusValidator;
     private readonly IValidator<SetPrimaryContactCommand> _setPrimaryContactValidator;
     private readonly IValidator<AssignAccountManagerCommand> _assignAccountManagerValidator;
+    private readonly ILogger<CustomersController> _logger;
 
     public CustomersController(
         ICommandHandler<CreateCustomerCommand, CustomerDto> createCustomerHandler,
@@ -56,7 +58,8 @@ public class CustomersController : ControllerBase
         IValidator<AssignCustomerCommand> assignValidator,
         IValidator<ChangeCustomerStatusCommand> changeStatusValidator,
         IValidator<SetPrimaryContactCommand> setPrimaryContactValidator,
-        IValidator<AssignAccountManagerCommand> assignAccountManagerValidator)
+        IValidator<AssignAccountManagerCommand> assignAccountManagerValidator,
+        ILogger<CustomersController> logger)
     {
         _createCustomerHandler = createCustomerHandler;
         _updateCustomerHandler = updateCustomerHandler;
@@ -76,6 +79,7 @@ public class CustomersController : ControllerBase
         _changeStatusValidator = changeStatusValidator;
         _setPrimaryContactValidator = setPrimaryContactValidator;
         _assignAccountManagerValidator = assignAccountManagerValidator;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -99,6 +103,7 @@ public class CustomersController : ControllerBase
         }
 
         var customer = await _createCustomerHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Customer {CustomerId} created successfully for Company {CompanyId}", customer.Id, request.CompanyId);
         return CreatedAtAction(nameof(GetCustomerById), new { id = customer.Id }, ResponseFactory.Success(customer, "Customer created successfully."));
     }
 
@@ -183,6 +188,7 @@ public class CustomersController : ControllerBase
         }
 
         var customer = await _changeStatusHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Customer {CustomerId} status changed to {Status}", customer.Id, request.Status);
         return Ok(ResponseFactory.Success(customer, "Customer status updated successfully."));
     }
 
@@ -255,6 +261,7 @@ public class CustomersController : ControllerBase
 
         var command = new ArchiveCustomerCommand(id, archivedBy);
         await _archiveCustomerHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Customer {CustomerId} archived successfully by User {UserId}", id, archivedBy);
         return Ok(ResponseFactory.Success("Customer archived successfully.", string.Empty));
     }
 }

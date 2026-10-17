@@ -5,6 +5,7 @@ using BuildingBlocks.Common.Responses;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Modules.Project.Application.Commands;
 using Modules.Project.Application.DTOs;
 using Modules.Project.Application.Queries;
@@ -45,6 +46,7 @@ public class ProjectsController : ControllerBase
     private readonly IValidator<UpdateRepositoryCommand> _updateRepositoryValidator;
     private readonly IValidator<AddDeploymentCommand> _addDeploymentValidator;
     private readonly IValidator<UpdateDeploymentCommand> _updateDeploymentValidator;
+    private readonly ILogger<ProjectsController> _logger;
 
     public ProjectsController(
         ICommandHandler<CreateProjectCommand, ProjectDetailDto> createProjectHandler,
@@ -69,7 +71,8 @@ public class ProjectsController : ControllerBase
         IValidator<AddRepositoryCommand> addRepositoryValidator,
         IValidator<UpdateRepositoryCommand> updateRepositoryValidator,
         IValidator<AddDeploymentCommand> addDeploymentValidator,
-        IValidator<UpdateDeploymentCommand> updateDeploymentValidator)
+        IValidator<UpdateDeploymentCommand> updateDeploymentValidator,
+        ILogger<ProjectsController> logger)
     {
         _createProjectHandler = createProjectHandler;
         _updateProjectHandler = updateProjectHandler;
@@ -94,6 +97,7 @@ public class ProjectsController : ControllerBase
         _updateRepositoryValidator = updateRepositoryValidator;
         _addDeploymentValidator = addDeploymentValidator;
         _updateDeploymentValidator = updateDeploymentValidator;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -122,6 +126,7 @@ public class ProjectsController : ControllerBase
         }
 
         var project = await _createProjectHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Project {ProjectId} created successfully with Name '{Name}'", project.Id, project.Name);
         return CreatedAtAction(nameof(GetProjectById), new { id = project.Id }, ResponseFactory.Success(project, "Project created successfully."));
     }
 
@@ -226,6 +231,7 @@ public class ProjectsController : ControllerBase
         }
 
         var project = await _changeStatusHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Project {ProjectId} status changed to {Status}", project.Id, request.Status);
         return Ok(ResponseFactory.Success(project, "Project status updated successfully."));
     }
 

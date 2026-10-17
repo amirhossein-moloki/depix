@@ -1,5 +1,8 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Compact;
 using BuildingBlocks.Common;
 using BuildingBlocks.Common.Extensions;
 using BuildingBlocks.Infrastructure;
@@ -29,6 +32,30 @@ using Modules.Support.API;
 using Modules.Support.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog Logger
+var logDirectory = builder.Configuration["LOG_DIR"] ?? builder.Configuration["Logging:LogDirectory"] ?? "logs";
+var logFilePath = Path.Combine(logDirectory, "depix-.json");
+int retainedFiles = int.TryParse(builder.Configuration["Logging:RetainedFileCountLimit"], out var rCount) ? rCount : 30;
+long fileSizeLimit = long.TryParse(builder.Configuration["Logging:FileSizeLimitBytes"], out var fSize) ? fSize : 10_485_760;
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "Depix.Api")
+    .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
+    .WriteTo.Console(new CompactJsonFormatter())
+    .WriteTo.File(
+        formatter: new CompactJsonFormatter(),
+        path: logFilePath,
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: retainedFiles,
+        fileSizeLimitBytes: fileSizeLimit,
+        rollOnFileSizeLimit: true,
+        shared: true)
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Preload module infrastructure assemblies into AppDomain for EF Core configuration scanning
 _ = Modules.Identity.Infrastructure.AssemblyReference.Assembly;
@@ -444,6 +471,68 @@ using (var scope = app.Services.CreateScope())
 
 app.UseForwardedHeaders();
 app.UseCorrelationId();
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    options.GetLevel = (httpContext, elapsed, ex) =>
+    {
+        if (ex != null || httpContext.Response.StatusCode >= 500)
+            return LogEventLevel.Error;
+        if (httpContext.Response.StatusCode >= 400)
+            return LogEventLevel.Warning;
+        return LogEventLevel.Information;
+    };
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("RequestMethod", httpContext.Request.Method);
+
+        // Strip sensitive query parameters if present
+        var path = httpContext.Request.Path.Value ?? string.Empty;
+        var queryString = httpContext.Request.QueryString.Value;
+        if (!string.IsNullOrEmpty(queryString))
+        {
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(queryString);
+            var sanitizedQuery = new List<string>();
+            foreach (var kvp in query)
+            {
+                var key = kvp.Key;
+                if (key.Equals("token", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("access_token", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("secret", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("password", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("key", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("api_key", StringComparison.OrdinalIgnoreCase))
+                {
+                    sanitizedQuery.Add($"{key}=[REDACTED]");
+                }
+                else
+                {
+                    sanitizedQuery.Add($"{key}={kvp.Value}");
+                }
+            }
+            path += "?" + string.Join("&", sanitizedQuery);
+        }
+        diagnosticContext.Set("RequestPath", path);
+        diagnosticContext.Set("StatusCode", httpContext.Response.StatusCode);
+        diagnosticContext.Set("TraceId", httpContext.TraceIdentifier);
+
+        if (httpContext.Response.Headers.TryGetValue("X-Correlation-ID", out var correlationId))
+        {
+            diagnosticContext.Set("CorrelationId", correlationId.ToString());
+        }
+
+        if (httpContext.User?.Identity?.IsAuthenticated == true)
+        {
+            var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!string.IsNullOrEmpty(userId))
+            {
+                diagnosticContext.Set("UserId", userId);
+            }
+        }
+    };
+});
+
 app.UseUnifiedExceptionHandler();
 
 var openApiEnabled = builder.Configuration.GetValue<bool>("OPENAPI_ENABLED", true);

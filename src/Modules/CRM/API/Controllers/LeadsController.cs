@@ -5,6 +5,7 @@ using BuildingBlocks.Common.Responses;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Modules.CRM.Application.Features.Companies.DTOs;
 using Modules.CRM.Application.Features.Leads.Commands;
 using Modules.CRM.Application.Features.Leads.DTOs;
@@ -39,6 +40,7 @@ public class LeadsController : ControllerBase
     private readonly IValidator<QualifyLeadCommand> _qualifyValidator;
     private readonly IValidator<DisqualifyLeadCommand> _disqualifyValidator;
     private readonly IValidator<ConvertLeadCommand> _convertValidator;
+    private readonly ILogger<LeadsController> _logger;
 
     public LeadsController(
         ICommandHandler<CreateLeadCommand, LeadDto> createLeadHandler,
@@ -59,7 +61,8 @@ public class LeadsController : ControllerBase
         IValidator<ChangeLeadStatusCommand> changeStatusValidator,
         IValidator<QualifyLeadCommand> qualifyValidator,
         IValidator<DisqualifyLeadCommand> disqualifyValidator,
-        IValidator<ConvertLeadCommand> convertValidator)
+        IValidator<ConvertLeadCommand> convertValidator,
+        ILogger<LeadsController> logger)
     {
         _createLeadHandler = createLeadHandler;
         _updateLeadHandler = updateLeadHandler;
@@ -80,6 +83,7 @@ public class LeadsController : ControllerBase
         _qualifyValidator = qualifyValidator;
         _disqualifyValidator = disqualifyValidator;
         _convertValidator = convertValidator;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -106,6 +110,7 @@ public class LeadsController : ControllerBase
         }
 
         var lead = await _createLeadHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Lead {LeadId} created successfully with Title '{Title}'", lead.Id, lead.Title);
         return CreatedAtAction(nameof(GetLeadById), new { id = lead.Id }, ResponseFactory.Success(lead, "Lead created successfully."));
     }
 
@@ -234,6 +239,7 @@ public class LeadsController : ControllerBase
         }
 
         var lead = await _changeLeadStatusHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Lead {LeadId} status changed to {Status}", lead.Id, request.Status);
         return Ok(ResponseFactory.Success(lead, "Lead status changed successfully."));
     }
 
@@ -285,6 +291,7 @@ public class LeadsController : ControllerBase
         }
 
         var result = await _convertLeadHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Lead {LeadId} converted successfully to Customer {CustomerId}", id, result.CustomerId);
         return Ok(ResponseFactory.Success(result, "Lead converted successfully."));
     }
 

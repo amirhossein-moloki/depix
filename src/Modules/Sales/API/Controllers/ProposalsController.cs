@@ -4,6 +4,7 @@ using BuildingBlocks.Common.Responses;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Modules.Sales.Application.Features.Opportunities.DTOs;
 using Modules.Sales.Application.Features.Proposals.Commands;
 using Modules.Sales.Application.Features.Proposals.DTOs;
@@ -34,6 +35,7 @@ public class ProposalsController : ControllerBase
     private readonly IValidator<AddProposalItemCommand> _addItemValidator;
     private readonly IValidator<UpdateProposalItemCommand> _updateItemValidator;
     private readonly IValidator<ChangeProposalStatusCommand> _changeStatusValidator;
+    private readonly ILogger<ProposalsController> _logger;
 
     public ProposalsController(
         ICommandHandler<CreateProposalCommand, ProposalDto> createProposalHandler,
@@ -50,7 +52,8 @@ public class ProposalsController : ControllerBase
         IValidator<UpdateProposalCommand> updateValidator,
         IValidator<AddProposalItemCommand> addItemValidator,
         IValidator<UpdateProposalItemCommand> updateItemValidator,
-        IValidator<ChangeProposalStatusCommand> changeStatusValidator)
+        IValidator<ChangeProposalStatusCommand> changeStatusValidator,
+        ILogger<ProposalsController> logger)
     {
         _createProposalHandler = createProposalHandler;
         _updateProposalHandler = updateProposalHandler;
@@ -67,6 +70,7 @@ public class ProposalsController : ControllerBase
         _addItemValidator = addItemValidator;
         _updateItemValidator = updateItemValidator;
         _changeStatusValidator = changeStatusValidator;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -93,6 +97,7 @@ public class ProposalsController : ControllerBase
         }
 
         var result = await _createProposalHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Proposal {ProposalId} created successfully for Opportunity {OpportunityId}", result.Id, request.OpportunityId);
         return CreatedAtAction(nameof(GetProposalById), new { id = result.Id }, ResponseFactory.Success(result, "Proposal created successfully."));
     }
 
@@ -226,6 +231,7 @@ public class ProposalsController : ControllerBase
         }
 
         var result = await _changeProposalStatusHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Proposal {ProposalId} status changed to {Status}", result.Id, request.Status);
         return Ok(ResponseFactory.Success(result, "Proposal status updated successfully."));
     }
 

@@ -4,6 +4,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Modules.Finance.Application.DTOs;
 using Modules.Finance.Application.Features.Invoices.Commands;
 using Modules.Finance.Application.Features.Invoices.Queries;
@@ -31,6 +32,7 @@ public class InvoicesController : ControllerBase
     private readonly IQueryHandler<GetCustomerInvoicesQuery, List<InvoiceListItemDto>> _getCustomerInvoicesHandler;
     private readonly IQueryHandler<GetProjectInvoicesQuery, List<InvoiceListItemDto>> _getProjectInvoicesHandler;
     private readonly IQueryHandler<GetInvoicePaymentsQuery, List<PaymentDto>> _getInvoicePaymentsHandler;
+    private readonly ILogger<InvoicesController> _logger;
 
     public InvoicesController(
         ICommandHandler<CreateInvoiceCommand, InvoiceDto> createInvoiceHandler,
@@ -46,7 +48,8 @@ public class InvoicesController : ControllerBase
         IQueryHandler<GetInvoicesQuery, PagedResult<InvoiceListItemDto>> getInvoicesHandler,
         IQueryHandler<GetCustomerInvoicesQuery, List<InvoiceListItemDto>> getCustomerInvoicesHandler,
         IQueryHandler<GetProjectInvoicesQuery, List<InvoiceListItemDto>> getProjectInvoicesHandler,
-        IQueryHandler<GetInvoicePaymentsQuery, List<PaymentDto>> getInvoicePaymentsHandler)
+        IQueryHandler<GetInvoicePaymentsQuery, List<PaymentDto>> getInvoicePaymentsHandler,
+        ILogger<InvoicesController> logger)
     {
         _createInvoiceHandler = createInvoiceHandler;
         _updateInvoiceHandler = updateInvoiceHandler;
@@ -62,6 +65,7 @@ public class InvoicesController : ControllerBase
         _getCustomerInvoicesHandler = getCustomerInvoicesHandler;
         _getProjectInvoicesHandler = getProjectInvoicesHandler;
         _getInvoicePaymentsHandler = getInvoicePaymentsHandler;
+        _logger = logger;
     }
 
     [HttpPost]
@@ -85,6 +89,7 @@ public class InvoicesController : ControllerBase
 
         await validator.ValidateAndThrowAsync(command, cancellationToken);
         var result = await _createInvoiceHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Invoice {InvoiceId} created successfully for Customer {CustomerId}", result.Id, request.CustomerId);
 
         return CreatedAtAction(nameof(GetInvoiceById), new { id = result.Id }, ResponseFactory.Success(result, "Invoice created successfully."));
     }
@@ -300,6 +305,7 @@ public class InvoicesController : ControllerBase
 
         await validator.ValidateAndThrowAsync(command, cancellationToken);
         var result = await _recordPaymentHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Payment {PaymentId} recorded successfully for Invoice {InvoiceId} with amount {Amount} {Currency}", result.Id, id, request.Amount, request.Currency);
 
         return CreatedAtAction(nameof(GetInvoicePayments), new { id = id }, ResponseFactory.Success(result, "Payment recorded successfully."));
     }
