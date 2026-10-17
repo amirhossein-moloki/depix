@@ -15,6 +15,8 @@ public class Company : AuditableAggregateRoot, ISoftDelete
     public string Email { get; private set; } = string.Empty;
     public Address Address { get; private set; } = new Address(string.Empty);
     public string Type { get; private set; } = "LEAD"; // LEAD, CUSTOMER, INACTIVE
+    public double? Latitude { get; private set; }
+    public double? Longitude { get; private set; }
 
     public bool IsDeleted { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -25,7 +27,7 @@ public class Company : AuditableAggregateRoot, ISoftDelete
 
     private Company() { }
 
-    public Company(Guid id, string name, string industry, string website, string phone, string email, Address address, string type = "LEAD") : base(id)
+    public Company(Guid id, string name, string industry, string website, string phone, string email, Address address, string type = "LEAD", double? latitude = null, double? longitude = null) : base(id)
     {
         Name = name;
         Industry = industry;
@@ -34,11 +36,12 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         Email = email;
         Address = address;
         Type = type;
+        SetLocation(latitude, longitude);
     }
 
-    public static Company Create(string name, string industry, string website, string phone, string email, Address address, string type = "LEAD")
+    public static Company Create(string name, string industry, string website, string phone, string email, Address address, string type = "LEAD", double? latitude = null, double? longitude = null)
     {
-        return new Company(Guid.NewGuid(), name, industry, website, phone, email, address, type);
+        return new Company(Guid.NewGuid(), name, industry, website, phone, email, address, type, latitude, longitude);
     }
 
     public void MarkAsCustomer()
@@ -53,7 +56,7 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         UpdateTimestamp(DateTime.UtcNow);
     }
 
-    public void UpdateInfo(string name, string industry, string website, string phone, string email, Address address, string type)
+    public void UpdateInfo(string name, string industry, string website, string phone, string email, Address address, string type, double? latitude = null, double? longitude = null)
     {
         Name = name;
         Industry = industry;
@@ -62,6 +65,18 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         Email = email;
         Address = address;
         Type = type;
+        SetLocation(latitude, longitude);
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void SetLocation(double? latitude, double? longitude)
+    {
+        if (latitude.HasValue != longitude.HasValue)
+            throw new ArgumentException("Latitude and longitude must be provided together.");
+        if (latitude is < -90 or > 90) throw new ArgumentOutOfRangeException(nameof(latitude));
+        if (longitude is < -180 or > 180) throw new ArgumentOutOfRangeException(nameof(longitude));
+        Latitude = latitude;
+        Longitude = longitude;
         UpdateTimestamp(DateTime.UtcNow);
     }
 
