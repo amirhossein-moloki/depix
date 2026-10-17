@@ -27,7 +27,11 @@ public static class DependencyInjection
 
         services.AddDbContext<ApplicationDbContext>(options =>
         {
-            options.UseNpgsql(connectionString);
+            options.UseNpgsql(connectionString, b =>
+            {
+                b.MigrationsAssembly("CrmErp.Host");
+                b.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorCodesToAdd: null);
+            });
         });
 
         services.AddScoped<DbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
