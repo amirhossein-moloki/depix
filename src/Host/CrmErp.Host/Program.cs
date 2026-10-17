@@ -16,6 +16,8 @@ using Modules.Customer.Infrastructure;
 using Modules.Finance.API;
 using Modules.Finance.Infrastructure;
 using Modules.Identity.API;
+using Modules.Identity.Application.Common.Interfaces;
+using Modules.Identity.Domain.Entities;
 using Modules.Identity.Infrastructure;
 using Modules.Platform.API;
 using Modules.Platform.Infrastructure;
@@ -221,6 +223,39 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred while applying EF Core database migrations on startup.");
         throw;
     }
+}
+
+
+if (args.Any(a => string.Equals(a, "create-admin", StringComparison.OrdinalIgnoreCase)))
+{
+    var email = Environment.GetEnvironmentVariable("ADMIN_EMAIL")?.Trim().ToLowerInvariant();
+    var password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+    if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password) || password.Length < 12)
+        throw new InvalidOperationException("Set ADMIN_EMAIL and ADMIN_PASSWORD (at least 12 characters) as environment variables to create the bootstrap administrator.");
+
+    using var bootstrapScope = app.Services.CreateScope();
+    var db = bootstrapScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    if (await db.Set<User>().AnyAsync(u => u.Email.ToLower() == email))
+        throw new InvalidOperationException("A user with ADMIN_EMAIL already exists. Bootstrap will not modify or elevate existing accounts.");
+
+    var role = await db.Set<Role>().FirstOrDefaultAsync(r => r.Name == "Super Admin");
+    if (role == null)
+    {
+        role = Role.Create("Super Admin", "Bootstrap system administrator");
+        await db.Set<Role>().AddAsync(role);
+    }
+
+    var hasher = bootstrapScope.ServiceProvider.GetRequiredService<IPasswordHasherService>();
+    var user = User.Create(
+        Environment.GetEnvironmentVariable("ADMIN_FIRST_NAME")?.Trim() is { Length: > 0 } firstName ? firstName : "System",
+        Environment.GetEnvironmentVariable("ADMIN_LAST_NAME")?.Trim() is { Length: > 0 } lastName ? lastName : "Administrator",
+        email,
+        hasher.HashPassword(password));
+    user.AddRole(role.Id);
+    await db.Set<User>().AddAsync(user);
+    await db.SaveChangesAsync();
+    Console.WriteLine($"Bootstrap administrator created for {email}. Keep the credentials secure.");
+    return;
 }
 
 app.UseForwardedHeaders();
