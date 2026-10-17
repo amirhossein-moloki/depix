@@ -118,4 +118,105 @@ public class AuthUseCaseServiceTests
 
         Assert.Contains("rejected", ex.Message);
     }
+
+    [Fact]
+    public async Task ResetPasswordAsync_ValidCurrentPassword_ShouldUpdatePasswordHashAndRevokeTokens()
+    {
+        // Arrange
+        var user = User.Create("John", "Doe", "john@example.com", "old_hashed_pwd");
+        var activeToken = RefreshToken.Create(user.Id, "hashed_token", TimeSpan.FromDays(7));
+        user.AddRefreshToken(activeToken);
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _hasherMock.Setup(h => h.VerifyPassword("OldPassword123!", "old_hashed_pwd"))
+            .Returns(true);
+        _hasherMock.Setup(h => h.HashPassword("NewPassword123!"))
+            .Returns("new_hashed_pwd");
+
+        // Act
+        await _service.ResetPasswordAsync(user.Id, new ResetPasswordRequest("OldPassword123!", "NewPassword123!"));
+
+        // Assert
+        Assert.Equal("new_hashed_pwd", user.PasswordHash);
+        Assert.False(activeToken.IsActive);
+        _userRepoMock.Verify(r => r.UpdateAsync(user, It.IsAny<CancellationToken>()), Times.Once);
+        _auditLoggerMock.Verify(a => a.LogAsync("PASSWORD_RESET_SUCCESS", user.Id, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_IncorrectCurrentPassword_ShouldThrowUnauthorizedException()
+    {
+        // Arrange
+        var user = User.Create("John", "Doe", "john@example.com", "old_hashed_pwd");
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(user.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(user);
+        _hasherMock.Setup(h => h.VerifyPassword("WrongPassword", "old_hashed_pwd"))
+            .Returns(false);
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<UnauthorizedException>(() =>
+            _service.ResetPasswordAsync(user.Id, new ResetPasswordRequest("WrongPassword", "NewPassword123!")));
+
+        Assert.Contains("Incorrect current password", ex.Message);
+        _auditLoggerMock.Verify(a => a.LogAsync("PASSWORD_RESET_FAILURE", user.Id, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_EmptyPasswords_ShouldThrowValidationException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _service.ResetPasswordAsync(Guid.NewGuid(), new ResetPasswordRequest("", "NewPassword123!")));
+    }
+
+    [Fact]
+    public async Task ResetUserPasswordByAdminAsync_ValidRequest_ShouldUpdatePasswordHashAndRevokeTokens()
+    {
+        // Arrange
+        var targetUser = User.Create("Jane", "Doe", "jane@example.com", "old_hashed_pwd");
+        var adminUserId = Guid.NewGuid();
+        var activeToken = RefreshToken.Create(targetUser.Id, "hashed_token", TimeSpan.FromDays(7));
+        targetUser.AddRefreshToken(activeToken);
+
+        _userRepoMock.Setup(r => r.GetByIdAsync(targetUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(targetUser);
+        _hasherMock.Setup(h => h.HashPassword("AdminNewPassword123!"))
+            .Returns("admin_new_hashed_pwd");
+        _roleRepoMock.Setup(r => r.GetRolesByUserIdAsync(targetUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Role>());
+
+        // Act
+        var result = await _service.ResetUserPasswordByAdminAsync(targetUser.Id, adminUserId, new AdminResetPasswordRequest("AdminNewPassword123!"));
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(targetUser.Id, result.Id);
+        Assert.Equal("admin_new_hashed_pwd", targetUser.PasswordHash);
+        Assert.False(activeToken.IsActive);
+        _userRepoMock.Verify(r => r.UpdateAsync(targetUser, It.IsAny<CancellationToken>()), Times.Once);
+        _auditLoggerMock.Verify(a => a.LogAsync("USER_PASSWORD_RESET_BY_ADMIN", targetUser.Id, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ResetUserPasswordByAdminAsync_UserNotFound_ShouldThrowEntityNotFoundException()
+    {
+        // Arrange
+        var targetUserId = Guid.NewGuid();
+        _userRepoMock.Setup(r => r.GetByIdAsync(targetUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<EntityNotFoundException>(() =>
+            _service.ResetUserPasswordByAdminAsync(targetUserId, Guid.NewGuid(), new AdminResetPasswordRequest("NewPassword123!")));
+    }
+
+    [Fact]
+    public async Task ResetUserPasswordByAdminAsync_EmptyNewPassword_ShouldThrowValidationException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() =>
+            _service.ResetUserPasswordByAdminAsync(Guid.NewGuid(), Guid.NewGuid(), new AdminResetPasswordRequest("")));
+    }
 }
