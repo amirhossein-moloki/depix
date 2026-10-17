@@ -53,7 +53,9 @@ public class CompaniesController : ControllerBase
             request.Phone,
             request.Email,
             request.AddressText,
-            request.Type
+            request.Type,
+            request.Latitude,
+            request.Longitude
         );
 
         var validationResult = await _createValidator.ValidateAsync(command, cancellationToken);
