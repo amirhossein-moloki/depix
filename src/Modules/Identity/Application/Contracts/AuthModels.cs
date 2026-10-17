@@ -1,6 +1,9 @@
 namespace Modules.Identity.Application.Contracts;
 
 public record LoginRequest(string Email, string Password);
+public record RegisterRequest(string FirstName, string LastName, string Email, string Password, string? Phone = null);
+public record ReviewRegistrationRequest(string RoleName);
+public record PendingUserDto(Guid UserId, string FirstName, string LastName, string Email, string? Phone, DateTime RegisteredAt, string ApprovalStatus);
 
 public record LoginResult(
     string AccessToken,
@@ -14,7 +17,6 @@ public record LoginResult(
 );
 
 public record RefreshTokenRequest(string RefreshToken);
-
 public record LogoutRequest(string RefreshToken);
 
 public record CurrentUserDto(
