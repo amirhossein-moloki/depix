@@ -16,5 +16,6 @@ public class UserApprovalConfiguration : IEntityTypeConfiguration<UserApproval>
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.ReviewedAt);
         builder.Property(x => x.ReviewedBy);
+        builder.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 }
