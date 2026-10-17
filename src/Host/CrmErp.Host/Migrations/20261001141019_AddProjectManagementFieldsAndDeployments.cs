@@ -262,41 +262,6 @@ namespace CrmErp.Host.Migrations
                 type: "uuid",
                 nullable: true);
 
-            migrationBuilder.AddColumn<Guid>(
-                name: "AssignedTo",
-                table: "customers",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "CustomerNumber",
-                table: "customers",
-                type: "character varying(50)",
-                maxLength: 50,
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Notes",
-                table: "customers",
-                type: "character varying(2000)",
-                maxLength: 2000,
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "PrimaryContactId",
-                table: "customers",
-                type: "uuid",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "Status",
-                table: "customers",
-                type: "character varying(20)",
-                maxLength: 20,
-                nullable: false,
-                defaultValue: "");
-
             migrationBuilder.AlterColumn<string>(
                 name: "Version",
                 table: "deployments",
@@ -409,27 +374,6 @@ namespace CrmErp.Host.Migrations
                 column: "ProposalId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_customers_AssignedTo",
-                table: "customers",
-                column: "AssignedTo");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_customers_CustomerNumber",
-                table: "customers",
-                column: "CustomerNumber",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_customers_PrimaryContactId",
-                table: "customers",
-                column: "PrimaryContactId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_customers_Status",
-                table: "customers",
-                column: "Status");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_deployments_Domain",
                 table: "deployments",
                 column: "Domain");
@@ -490,22 +434,6 @@ namespace CrmErp.Host.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_projects_ProposalId",
                 table: "projects");
-
-            migrationBuilder.DropIndex(
-                name: "IX_customers_AssignedTo",
-                table: "customers");
-
-            migrationBuilder.DropIndex(
-                name: "IX_customers_CustomerNumber",
-                table: "customers");
-
-            migrationBuilder.DropIndex(
-                name: "IX_customers_PrimaryContactId",
-                table: "customers");
-
-            migrationBuilder.DropIndex(
-                name: "IX_customers_Status",
-                table: "customers");
 
             migrationBuilder.DropPrimaryKey(
                 name: "PK_deployments",
@@ -630,26 +558,6 @@ namespace CrmErp.Host.Migrations
             migrationBuilder.DropColumn(
                 name: "ProposalId",
                 table: "projects");
-
-            migrationBuilder.DropColumn(
-                name: "AssignedTo",
-                table: "customers");
-
-            migrationBuilder.DropColumn(
-                name: "CustomerNumber",
-                table: "customers");
-
-            migrationBuilder.DropColumn(
-                name: "Notes",
-                table: "customers");
-
-            migrationBuilder.DropColumn(
-                name: "PrimaryContactId",
-                table: "customers");
-
-            migrationBuilder.DropColumn(
-                name: "Status",
-                table: "customers");
 
             migrationBuilder.DropColumn(
                 name: "Environment",
