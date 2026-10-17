@@ -138,7 +138,10 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
-        if (user == null || user.Status != UserStatus.Active || !_passwordHasherService.VerifyPassword(request.Password, user.PasswordHash))
+        var approval = user == null ? null : await _approvalRepository.GetByUserIdAsync(user.Id, cancellationToken);
+        if (user == null || user.Status != UserStatus.Active ||
+            (approval != null && approval.Status != UserApprovalStatus.Approved) ||
+            !_passwordHasherService.VerifyPassword(request.Password, user.PasswordHash))
         {
             await _auditEventLogger.LogAsync("LOGIN_FAILURE", user?.Id, $"Failed login attempt for email: {request.Email}", cancellationToken);
             throw new UnauthorizedException("Invalid email or password.");
@@ -190,7 +193,9 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         var user = await _userRepository.GetByIdAsync(refreshToken.UserId, cancellationToken);
-        if (user == null || user.Status != UserStatus.Active)
+        var approval = user == null ? null : await _approvalRepository.GetByUserIdAsync(user.Id, cancellationToken);
+        if (user == null || user.Status != UserStatus.Active ||
+            (approval != null && approval.Status != UserApprovalStatus.Approved))
         {
             throw new UnauthorizedException("User account is inactive or not found.");
         }
