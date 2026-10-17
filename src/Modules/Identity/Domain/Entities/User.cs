@@ -6,7 +6,9 @@ public enum UserStatus
 {
     Active = 1,
     Inactive = 2,
-    LockedOut = 3
+    LockedOut = 3,
+    PendingApproval = 4,
+    Rejected = 5
 }
 
 public class User : AuditableAggregateRoot
@@ -21,6 +23,9 @@ public class User : AuditableAggregateRoot
     public string PasswordHash { get; private set; } = string.Empty;
     public UserStatus Status { get; private set; } = UserStatus.Active;
     public DateTime? LastLoginAt { get; private set; }
+    public Guid? ApprovedBy { get; private set; }
+    public DateTime? ApprovedAt { get; private set; }
+    public string? RejectionReason { get; private set; }
 
     public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
     public IReadOnlyCollection<RefreshToken> RefreshTokens => _refreshTokens.AsReadOnly();
@@ -38,9 +43,9 @@ public class User : AuditableAggregateRoot
         Status = status;
     }
 
-    public static User Create(string firstName, string lastName, string email, string passwordHash, string? phone = null)
+    public static User Create(string firstName, string lastName, string email, string passwordHash, string? phone = null, UserStatus status = UserStatus.Active)
     {
-        return new User(Guid.NewGuid(), firstName, lastName, email, passwordHash, phone, UserStatus.Active);
+        return new User(Guid.NewGuid(), firstName, lastName, email, passwordHash, phone, status);
     }
 
     public void UpdateProfile(string firstName, string lastName, string email, string? phone = null)
@@ -55,6 +60,24 @@ public class User : AuditableAggregateRoot
     public void SetStatus(UserStatus status)
     {
         Status = status;
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void Approve(Guid adminUserId)
+    {
+        Status = UserStatus.Active;
+        ApprovedBy = adminUserId;
+        ApprovedAt = DateTime.UtcNow;
+        RejectionReason = null;
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void Reject(Guid adminUserId, string? reason = null)
+    {
+        Status = UserStatus.Rejected;
+        ApprovedBy = adminUserId;
+        ApprovedAt = DateTime.UtcNow;
+        RejectionReason = reason;
         UpdateTimestamp(DateTime.UtcNow);
     }
 

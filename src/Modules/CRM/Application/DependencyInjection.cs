@@ -93,6 +93,9 @@ public static class DependencyInjection
         services.AddScoped<IValidator<CreateSalesNoteCommand>, CreateSalesNoteCommandValidator>();
         services.AddScoped<IValidator<UpdateSalesNoteCommand>, UpdateSalesNoteCommandValidator>();
 
+        // SalesVisit Services
+        services.AddScoped<Modules.CRM.Application.Services.ISalesVisitService, Modules.CRM.Application.Services.SalesVisitService>();
+
         return services;
     }
 }

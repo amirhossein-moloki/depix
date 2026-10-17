@@ -204,6 +204,127 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// Check for CLI argument: create-admin
+if (args.Length > 0 && args[0].Equals("create-admin", StringComparison.OrdinalIgnoreCase))
+{
+    var tempApp = builder.Build();
+    using (var scope = tempApp.Services.CreateScope())
+    {
+        var services = scope.ServiceProvider;
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        var hasher = services.GetRequiredService<Modules.Identity.Application.Common.Interfaces.IPasswordHasherService>();
+
+        logger.LogInformation("Running CLI command: create-admin");
+
+        string email = string.Empty;
+        string password = string.Empty;
+        string firstName = "Admin";
+        string lastName = "System";
+
+        // Extract CLI arguments if provided e.g. --email admin@domain.com --password secret
+        for (int i = 1; i < args.Length; i++)
+        {
+            if (args[i].Equals("--email", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                email = args[i + 1];
+                i++;
+            }
+            else if (args[i].Equals("--password", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                password = args[i + 1];
+                i++;
+            }
+            else if (args[i].Equals("--firstname", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                firstName = args[i + 1];
+                i++;
+            }
+            else if (args[i].Equals("--lastname", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                lastName = args[i + 1];
+                i++;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            Console.Write("Enter Admin Email: ");
+            email = Console.ReadLine()?.Trim() ?? string.Empty;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            Console.Write("Enter Admin Password: ");
+            StringBuilder sb = new StringBuilder();
+            while (true)
+            {
+                var key = Console.ReadKey(intercept: true);
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    break;
+                }
+                if (key.Key == ConsoleKey.Backspace && sb.Length > 0)
+                {
+                    sb.Remove(sb.Length - 1, 1);
+                }
+                else if (key.Key != ConsoleKey.Backspace)
+                {
+                    sb.Append(key.KeyChar);
+                }
+            }
+            password = sb.ToString();
+        }
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            Console.Error.WriteLine("Error: Admin email and password cannot be empty.");
+            Environment.Exit(1);
+            return;
+        }
+
+        await dbContext.Database.MigrateAsync();
+
+        var existingUser = await dbContext.Set<Modules.Identity.Domain.Entities.User>()
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+        if (existingUser != null)
+        {
+            Console.WriteLine($"Admin user with email '{email}' already exists.");
+            Environment.Exit(0);
+            return;
+        }
+
+        var hashedPassword = hasher.HashPassword(password);
+        var adminUser = Modules.Identity.Domain.Entities.User.Create(
+            firstName,
+            lastName,
+            email,
+            hashedPassword,
+            status: Modules.Identity.Domain.Entities.UserStatus.Active
+        );
+
+        var adminRole = await dbContext.Set<Modules.Identity.Domain.Entities.Role>()
+            .FirstOrDefaultAsync(r => r.Name.ToLower() == "admin");
+
+        if (adminRole == null)
+        {
+            adminRole = Modules.Identity.Domain.Entities.Role.Create("Admin", "System Administrator Role");
+            await dbContext.Set<Modules.Identity.Domain.Entities.Role>().AddAsync(adminRole);
+            await dbContext.SaveChangesAsync();
+        }
+
+        adminUser.AddRole(adminRole.Id);
+        await dbContext.Set<Modules.Identity.Domain.Entities.User>().AddAsync(adminUser);
+        await dbContext.SaveChangesAsync();
+
+        Console.WriteLine($"Admin user '{email}' created successfully with active status.");
+        Environment.Exit(0);
+        return;
+    }
+}
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())

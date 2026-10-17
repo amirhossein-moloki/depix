@@ -13,6 +13,11 @@ public interface IAuthUseCaseService
     Task<LoginResult> RefreshTokenAsync(RefreshTokenRequest request, string? clientIp = null, CancellationToken cancellationToken = default);
     Task LogoutAsync(LogoutRequest request, CancellationToken cancellationToken = default);
     Task<CurrentUserDto> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<UserDto> RegisterPublicUserAsync(RegisterUserRequest request, CancellationToken cancellationToken = default);
+    Task<UserDto> CreateUserByAdminAsync(CreateUserByAdminRequest request, CancellationToken cancellationToken = default);
+    Task<List<UserDto>> GetPendingUsersAsync(CancellationToken cancellationToken = default);
+    Task<UserDto> ApproveUserAsync(Guid targetUserId, Guid adminUserId, CancellationToken cancellationToken = default);
+    Task<UserDto> RejectUserAsync(Guid targetUserId, Guid adminUserId, string? reason = null, CancellationToken cancellationToken = default);
 }
 
 public class AuthUseCaseService : IAuthUseCaseService
@@ -51,10 +56,28 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         var user = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
-        if (user == null || user.Status != UserStatus.Active || !_passwordHasherService.VerifyPassword(request.Password, user.PasswordHash))
+        if (user == null || !_passwordHasherService.VerifyPassword(request.Password, user.PasswordHash))
         {
             await _auditEventLogger.LogAsync("LOGIN_FAILURE", user?.Id, $"Failed login attempt for email: {request.Email}", cancellationToken);
             throw new UnauthorizedException("Invalid email or password.");
+        }
+
+        if (user.Status == UserStatus.PendingApproval)
+        {
+            await _auditEventLogger.LogAsync("LOGIN_FAILURE", user.Id, "Attempted login while pending admin approval.", cancellationToken);
+            throw new ForbiddenException("Account is pending administrator approval.");
+        }
+
+        if (user.Status == UserStatus.Rejected)
+        {
+            await _auditEventLogger.LogAsync("LOGIN_FAILURE", user.Id, "Attempted login on rejected account.", cancellationToken);
+            throw new ForbiddenException("Account registration request was rejected by an administrator.");
+        }
+
+        if (user.Status != UserStatus.Active)
+        {
+            await _auditEventLogger.LogAsync("LOGIN_FAILURE", user.Id, "Attempted login on inactive or locked account.", cancellationToken);
+            throw new ForbiddenException("Account is inactive or locked out.");
         }
 
         var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
@@ -105,7 +128,9 @@ public class AuthUseCaseService : IAuthUseCaseService
         var user = await _userRepository.GetByIdAsync(refreshToken.UserId, cancellationToken);
         if (user == null || user.Status != UserStatus.Active)
         {
-            throw new UnauthorizedException("User account is inactive or not found.");
+            refreshToken.Revoke();
+            await _refreshTokenRepository.UpdateAsync(refreshToken, cancellationToken);
+            throw new UnauthorizedException("User account is inactive, pending approval, rejected, or not found.");
         }
 
         // Rotate Refresh Token
@@ -185,6 +210,152 @@ public class AuthUseCaseService : IAuthUseCaseService
             user.LastLoginAt,
             roleNames,
             permissionCodes
+        );
+    }
+
+    public async Task<UserDto> RegisterPublicUserAsync(RegisterUserRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ValidationException("Email and password are required for registration.");
+        }
+
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+        if (existingUser != null)
+        {
+            throw new BusinessRuleException("User with this email already exists.");
+        }
+
+        var hashedPassword = _passwordHasherService.HashPassword(request.Password);
+        var newUser = User.Create(request.FirstName, request.LastName, request.Email, hashedPassword, request.Phone, UserStatus.PendingApproval);
+
+        var allRoles = await _roleRepository.GetAllAsync(cancellationToken);
+        var defaultRole = allRoles.FirstOrDefault(r => r.Name.Equals("User", StringComparison.OrdinalIgnoreCase))
+                          ?? allRoles.FirstOrDefault(r => !r.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase));
+
+        if (defaultRole != null)
+        {
+            newUser.AddRole(defaultRole.Id);
+        }
+
+        await _userRepository.AddAsync(newUser, cancellationToken);
+        await _auditEventLogger.LogAsync("USER_REGISTERED", newUser.Id, "User registered via public portal (Pending Approval).", cancellationToken);
+
+        var userRoles = await _roleRepository.GetRolesByUserIdAsync(newUser.Id, cancellationToken);
+        return MapToUserDto(newUser, userRoles.Select(r => r.Name).ToList());
+    }
+
+    public async Task<UserDto> CreateUserByAdminAsync(CreateUserByAdminRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+        {
+            throw new ValidationException("Email and password are required.");
+        }
+
+        var existingUser = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+        if (existingUser != null)
+        {
+            throw new BusinessRuleException("User with this email already exists.");
+        }
+
+        var hashedPassword = _passwordHasherService.HashPassword(request.Password);
+        var newUser = User.Create(request.FirstName, request.LastName, request.Email, hashedPassword, request.Phone, UserStatus.Active);
+
+        var allRoles = await _roleRepository.GetAllAsync(cancellationToken);
+        if (request.RoleNames != null && request.RoleNames.Any())
+        {
+            foreach (var roleName in request.RoleNames.Distinct())
+            {
+                var role = allRoles.FirstOrDefault(r => r.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase));
+                if (role != null)
+                {
+                    newUser.AddRole(role.Id);
+                }
+            }
+        }
+
+        if (!newUser.UserRoles.Any())
+        {
+            var defaultRole = allRoles.FirstOrDefault(r => r.Name.Equals("User", StringComparison.OrdinalIgnoreCase));
+            if (defaultRole != null)
+            {
+                newUser.AddRole(defaultRole.Id);
+            }
+        }
+
+        await _userRepository.AddAsync(newUser, cancellationToken);
+        await _auditEventLogger.LogAsync("USER_CREATED_BY_ADMIN", newUser.Id, "User created by administrator.", cancellationToken);
+
+        var assignedRoles = await _roleRepository.GetRolesByUserIdAsync(newUser.Id, cancellationToken);
+        return MapToUserDto(newUser, assignedRoles.Select(r => r.Name).ToList());
+    }
+
+    public async Task<List<UserDto>> GetPendingUsersAsync(CancellationToken cancellationToken = default)
+    {
+        var pendingUsers = await _userRepository.GetPendingUsersAsync(cancellationToken);
+        var dtos = new List<UserDto>();
+
+        foreach (var user in pendingUsers)
+        {
+            var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+            dtos.Add(MapToUserDto(user, roles.Select(r => r.Name).ToList()));
+        }
+
+        return dtos;
+    }
+
+    public async Task<UserDto> ApproveUserAsync(Guid targetUserId, Guid adminUserId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", targetUserId);
+        }
+
+        user.Approve(adminUserId);
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        await _auditEventLogger.LogAsync("USER_APPROVED", user.Id, $"User approved by Admin ID: {adminUserId}", cancellationToken);
+
+        var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+        return MapToUserDto(user, roles.Select(r => r.Name).ToList());
+    }
+
+    public async Task<UserDto> RejectUserAsync(Guid targetUserId, Guid adminUserId, string? reason = null, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", targetUserId);
+        }
+
+        user.Reject(adminUserId, reason);
+
+        foreach (var token in user.RefreshTokens.Where(rt => rt.IsActive))
+        {
+            token.Revoke();
+        }
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        await _auditEventLogger.LogAsync("USER_REJECTED", user.Id, $"User rejected by Admin ID: {adminUserId}. Reason: {reason}", cancellationToken);
+
+        var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+        return MapToUserDto(user, roles.Select(r => r.Name).ToList());
+    }
+
+    private static UserDto MapToUserDto(User user, List<string> roles)
+    {
+        return new UserDto(
+            user.Id,
+            user.FirstName,
+            user.LastName,
+            user.Email,
+            user.Phone,
+            user.Status.ToString(),
+            user.CreatedAt,
+            roles,
+            user.ApprovedBy,
+            user.ApprovedAt,
+            user.RejectionReason
         );
     }
 }
