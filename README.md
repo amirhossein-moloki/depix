@@ -126,7 +126,7 @@ Note: Automated startup migration execution and destructive operations like `Ens
 
 ---
 
-## 5. Local Setup & Verification
+## Administration and Registration\n\nSee [ADMINISTRATION.md](ADMINISTRATION.md) for the bootstrap administrator command, public registration and approval endpoints, and company visit/map APIs.\n\n## 5. Local Setup & Verification
 
 ### Prerequisites
 - .NET 8 SDK
