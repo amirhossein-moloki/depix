@@ -13,6 +13,7 @@ public class AuthUseCaseServiceTests
 {
     private readonly Mock<IUserRepository> _userRepoMock = new();
     private readonly Mock<IRoleRepository> _roleRepoMock = new();
+    private readonly Mock<IUserApprovalRepository> _approvalRepoMock = new();
     private readonly Mock<IPermissionRepository> _permissionRepoMock = new();
     private readonly Mock<IRefreshTokenRepository> _refreshTokenRepoMock = new();
     private readonly Mock<IJwtTokenService> _jwtServiceMock = new();
@@ -26,6 +27,7 @@ public class AuthUseCaseServiceTests
         _service = new AuthUseCaseService(
             _userRepoMock.Object,
             _roleRepoMock.Object,
+            _approvalRepoMock.Object,
             _permissionRepoMock.Object,
             _refreshTokenRepoMock.Object,
             _jwtServiceMock.Object,
