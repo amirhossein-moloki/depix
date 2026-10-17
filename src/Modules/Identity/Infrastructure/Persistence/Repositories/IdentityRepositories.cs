@@ -38,7 +38,10 @@ public class IdentityRepositories : IUserRepository, IUserApprovalRepository, IR
 
     public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
     {
-        _dbContext.Set<User>().Update(user);
+        // Repository reads return tracked aggregates. Avoid Update(graph), which can incorrectly
+        // mark newly-added UserRole children as Modified instead of Added.
+        if (_dbContext.Entry(user).State == EntityState.Detached)
+            _dbContext.Set<User>().Attach(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
