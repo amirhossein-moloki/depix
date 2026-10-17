@@ -7,6 +7,15 @@ public class CreateCompanyCommandValidator : AbstractValidator<CreateCompanyComm
 {
     public CreateCompanyCommandValidator()
     {
+        RuleFor(x => x)
+            .Must(x => x.Latitude.HasValue == x.Longitude.HasValue)
+            .WithMessage("Latitude and longitude must be supplied together.");
+        RuleFor(x => x.Latitude)
+            .Must(value => !value.HasValue || (value.Value >= -90 && value.Value <= 90))
+            .WithMessage("Latitude must be between -90 and 90.");
+        RuleFor(x => x.Longitude)
+            .Must(value => !value.HasValue || (value.Value >= -180 && value.Value <= 180))
+            .WithMessage("Longitude must be between -180 and 180.");
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Company name is required.")
             .MaximumLength(200).WithMessage("Company name must not exceed 200 characters.");
