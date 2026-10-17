@@ -36,7 +36,7 @@ public class Company : AuditableAggregateRoot, ISoftDelete
         Email = email;
         Address = address;
         Type = type;
-        SetLocation(latitude, longitude);
+        if (latitude.HasValue || longitude.HasValue) SetLocation(latitude, longitude);
     }
 
     public static Company Create(string name, string industry, string website, string phone, string email, Address address, string type = "LEAD", double? latitude = null, double? longitude = null)
