@@ -16,7 +16,9 @@ public record UpdateCompanyCommand(
     string Phone,
     string Email,
     string AddressText,
-    string Type
+    string Type,
+    double? Latitude = null,
+    double? Longitude = null
 ) : ICommand<CompanyDto>;
 
 public class UpdateCompanyCommandHandler : ICommandHandler<UpdateCompanyCommand, CompanyDto>
@@ -33,25 +35,12 @@ public class UpdateCompanyCommandHandler : ICommandHandler<UpdateCompanyCommand,
     public async Task<CompanyDto> HandleAsync(UpdateCompanyCommand command, CancellationToken cancellationToken = default)
     {
         var company = await _companyRepository.GetByIdAsync(command.Id, cancellationToken);
-        if (company == null)
-        {
-            throw new EntityNotFoundException(nameof(Company), command.Id);
-        }
+        if (company == null) throw new EntityNotFoundException(nameof(Company), command.Id);
 
-        var address = new Address(command.AddressText);
-        company.UpdateInfo(
-            command.Name,
-            command.Industry,
-            command.Website,
-            command.Phone,
-            command.Email,
-            address,
-            command.Type
-        );
-
+        company.UpdateInfo(command.Name, command.Industry, command.Website, command.Phone, command.Email,
+            new Address(command.AddressText), command.Type, command.Latitude, command.Longitude);
         _companyRepository.Update(company);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
         return company.ToDto();
     }
 }
