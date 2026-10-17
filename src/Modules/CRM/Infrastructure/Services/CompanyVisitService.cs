@@ -36,4 +36,13 @@ public class CompanyVisitService : ICompanyVisitService
             .OrderBy(c => c.Name)
             .Select(c => new CompanyMapPointDto(c.Id, c.Name, c.Address.Text, c.Type, c.Latitude!.Value, c.Longitude!.Value))
             .ToListAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<CompanyVisitMapPointDto>> GetVisitMapPointsAsync(CancellationToken cancellationToken = default)
+        => await (from visit in _dbContext.Set<CompanyVisit>().AsNoTracking()
+                  join company in _dbContext.Set<Company>().AsNoTracking() on visit.CompanyId equals company.Id
+                  where visit.Latitude.HasValue && visit.Longitude.HasValue
+                  orderby visit.VisitedAt descending
+                  select new CompanyVisitMapPointDto(visit.Id, company.Id, company.Name, visit.SellerUserId,
+                      visit.VisitedAt, visit.Notes, visit.Latitude!.Value, visit.Longitude!.Value))
+            .ToListAsync(cancellationToken);
 }
