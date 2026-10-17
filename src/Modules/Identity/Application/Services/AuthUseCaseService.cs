@@ -11,6 +11,7 @@ public interface IAuthUseCaseService
 {
     Task<Guid> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default);
     Task<List<PendingUserDto>> GetPendingRegistrationsAsync(CancellationToken cancellationToken = default);
+    Task<List<string>> GetAssignableRolesAsync(CancellationToken cancellationToken = default);
     Task ApproveRegistrationAsync(Guid userId, Guid reviewerId, string roleName, CancellationToken cancellationToken = default);
     Task RejectRegistrationAsync(Guid userId, Guid reviewerId, CancellationToken cancellationToken = default);
     Task<LoginResult> LoginAsync(LoginRequest request, string? clientIp = null, CancellationToken cancellationToken = default);
@@ -73,6 +74,16 @@ public class AuthUseCaseService : IAuthUseCaseService
         await _userRepository.AddRegistrationAsync(user, approval, cancellationToken);
         await _auditEventLogger.LogAsync("REGISTRATION_PENDING", user.Id, "A new registration is awaiting administrator approval.", cancellationToken);
         return user.Id;
+    }
+
+    public async Task<List<string>> GetAssignableRolesAsync(CancellationToken cancellationToken = default)
+    {
+        var roles = await _roleRepository.GetAllAsync(cancellationToken);
+        return roles.Select(r => r.Name)
+            .Where(name => !name.Equals("Super Admin", StringComparison.OrdinalIgnoreCase) &&
+                           !name.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(name => name)
+            .ToList();
     }
 
     public async Task<List<PendingUserDto>> GetPendingRegistrationsAsync(CancellationToken cancellationToken = default)
