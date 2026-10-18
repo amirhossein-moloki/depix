@@ -54,6 +54,7 @@ public class IdentityRepositoriesEfInMemoryTests
         jwt.HashRefreshToken("raw_refresh_token_1").Returns("hashed_refresh_token_1");
 
         var auditLogger = Substitute.For<IAuditEventLogger>();
+        var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<AuthUseCaseService>>();
 
         var authService = new AuthUseCaseService(
             identityRepo,
@@ -62,7 +63,8 @@ public class IdentityRepositoriesEfInMemoryTests
             identityRepo,
             jwt,
             hasher,
-            auditLogger
+            auditLogger,
+            logger
         );
 
         // Act - First Login
@@ -122,6 +124,7 @@ public class IdentityRepositoriesEfInMemoryTests
         var jwt = Substitute.For<IJwtTokenService>();
         var auditLogger = Substitute.For<IAuditEventLogger>();
 
+        var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<AuthUseCaseService>>();
         var authService = new AuthUseCaseService(
             identityRepo,
             identityRepo,
@@ -129,7 +132,8 @@ public class IdentityRepositoriesEfInMemoryTests
             identityRepo,
             jwt,
             hasher,
-            auditLogger
+            auditLogger,
+            logger
         );
 
         // Act & Assert
