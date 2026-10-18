@@ -60,8 +60,12 @@ COPY src/Modules/Support/Application/*.csproj src/Modules/Support/Application/
 COPY src/Modules/Support/Domain/*.csproj src/Modules/Support/Domain/
 COPY src/Modules/Support/Infrastructure/*.csproj src/Modules/Support/Infrastructure/
 
+# Copy Tools project files
+COPY src/Tools/Depix.Cli/*.csproj src/Tools/Depix.Cli/
+
 # Copy tests project files
 COPY tests/CrmErp.ArchitectureTests/*.csproj tests/CrmErp.ArchitectureTests/
+COPY tests/Depix.Cli.Tests/*.csproj tests/Depix.Cli.Tests/
 COPY tests/IntegrationTests/*.csproj tests/IntegrationTests/
 COPY tests/Modules.Identity.Tests/*.csproj tests/Modules.Identity.Tests/
 COPY tests/UnitTests/*.csproj tests/UnitTests/
