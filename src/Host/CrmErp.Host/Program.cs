@@ -30,6 +30,7 @@ using Modules.Sales.API;
 using Modules.Sales.Infrastructure;
 using Modules.Support.API;
 using Modules.Support.Infrastructure;
+using CrmErp.Host.Seeders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -312,154 +313,10 @@ if (args.Length > 0 && args[0].Equals("create-admin", StringComparison.OrdinalIg
         }
 
         await dbContext.Database.MigrateAsync();
+        await SystemPermissionsSeeder.SeedAsync(dbContext, logger);
 
-        // System Permissions Seed Definitions
-        var systemPermissions = new (string Code, string Name, string Module)[]
-        {
-            // CRM
-            ("CRM.Lead.Create", "Create Lead", "CRM"),
-            ("CRM.Lead.Read", "Read Lead", "CRM"),
-            ("CRM.Lead.Update", "Update Lead", "CRM"),
-            ("CRM.Lead.Assign", "Assign Lead", "CRM"),
-            ("CRM.Lead.StatusChange", "Change Lead Status", "CRM"),
-            ("CRM.Lead.Qualify", "Qualify/Disqualify Lead", "CRM"),
-            ("CRM.Lead.Convert", "Convert Lead", "CRM"),
-            ("CRM.Lead.Delete", "Delete Lead", "CRM"),
-
-            ("CRM.Company.Create", "Create Company", "CRM"),
-            ("CRM.Company.Read", "Read Company", "CRM"),
-            ("CRM.Company.Update", "Update Company", "CRM"),
-            ("CRM.Company.Delete", "Delete Company", "CRM"),
-
-            ("CRM.Contact.Create", "Create Contact", "CRM"),
-            ("CRM.Contact.Read", "Read Contact", "CRM"),
-            ("CRM.Contact.Update", "Update Contact", "CRM"),
-            ("CRM.Contact.Delete", "Delete Contact", "CRM"),
-
-            ("CRM.Activity.Create", "Create Activity", "CRM"),
-            ("CRM.Activity.Read", "Read Activity", "CRM"),
-            ("CRM.Activity.Update", "Update Activity", "CRM"),
-            ("CRM.Activity.Delete", "Delete Activity", "CRM"),
-
-            ("CRM.SalesNote.Create", "Create Sales Note", "CRM"),
-            ("CRM.SalesNote.Read", "Read Sales Note", "CRM"),
-            ("CRM.SalesNote.Update", "Update Sales Note", "CRM"),
-            ("CRM.SalesNote.Delete", "Delete Sales Note", "CRM"),
-
-            // Customer
-            ("Customer.Create", "Create Customer", "Customer"),
-            ("Customer.Read", "Read Customer", "Customer"),
-            ("Customer.Update", "Update Customer", "Customer"),
-            ("Customer.StatusChange", "Change Customer Status", "Customer"),
-            ("Customer.Assign", "Assign Customer", "Customer"),
-            ("Customer.Delete", "Delete Customer", "Customer"),
-
-            // Sales
-            ("Sales.Opportunity.Create", "Create Opportunity", "Sales"),
-            ("Sales.Opportunity.Read", "Read Opportunity", "Sales"),
-            ("Sales.Opportunity.Update", "Update Opportunity", "Sales"),
-            ("Sales.Opportunity.Assign", "Assign Opportunity", "Sales"),
-            ("Sales.Opportunity.StageChange", "Change Opportunity Stage", "Sales"),
-            ("Sales.Opportunity.Close", "Close Opportunity", "Sales"),
-            ("Sales.Opportunity.Delete", "Delete Opportunity", "Sales"),
-
-            ("Sales.Proposal.Create", "Create Proposal", "Sales"),
-            ("Sales.Proposal.Read", "Read Proposal", "Sales"),
-            ("Sales.Proposal.Update", "Update Proposal", "Sales"),
-            ("Sales.Proposal.StatusChange", "Change Proposal Status", "Sales"),
-            ("Sales.Proposal.Delete", "Delete Proposal", "Sales"),
-
-            // Project
-            ("Project.Create", "Create Project", "Project"),
-            ("Project.Read", "Read Project", "Project"),
-            ("Project.Update", "Update Project", "Project"),
-            ("Project.StatusChange", "Change Project Status", "Project"),
-            ("Project.Delete", "Delete Project", "Project"),
-            ("Project.Repository.Manage", "Manage Repositories", "Project"),
-            ("Project.Deployment.Manage", "Manage Deployments", "Project"),
-
-            // Finance
-            ("Finance.Invoice.Create", "Create Invoice", "Finance"),
-            ("Finance.Invoice.Read", "Read Invoice", "Finance"),
-            ("Finance.Invoice.Update", "Update Invoice", "Finance"),
-            ("Finance.Invoice.Issue", "Issue Invoice", "Finance"),
-            ("Finance.Invoice.Cancel", "Cancel Invoice", "Finance"),
-            ("Finance.Invoice.Delete", "Delete Invoice", "Finance"),
-            ("Finance.Payment.Create", "Create Payment", "Finance"),
-            ("Finance.Payment.Read", "Read Payment", "Finance"),
-
-            // Support
-            ("Support.Ticket.Create", "Create Ticket", "Support"),
-            ("Support.Ticket.Read", "Read Ticket", "Support"),
-            ("Support.Ticket.Update", "Update Ticket", "Support"),
-            ("Support.Ticket.Assign", "Assign Ticket", "Support"),
-            ("Support.Ticket.StatusChange", "Change Ticket Status", "Support"),
-            ("Support.Ticket.Resolve", "Resolve Ticket", "Support"),
-            ("Support.Ticket.Close", "Close Ticket", "Support"),
-            ("Support.Ticket.Delete", "Delete Ticket", "Support"),
-            ("Support.Comment.Create", "Create Ticket Comment", "Support"),
-            ("Support.Comment.Read", "Read Ticket Comment", "Support"),
-
-            // Platform
-            ("Platform.Task.Create", "Create Task", "Platform"),
-            ("Platform.Task.Read", "Read Task", "Platform"),
-            ("Platform.Task.Update", "Update Task", "Platform"),
-            ("Platform.Task.Delete", "Delete Task", "Platform"),
-
-            ("Platform.File.Create", "Upload File", "Platform"),
-            ("Platform.File.Read", "Read File", "Platform"),
-            ("Platform.File.Delete", "Delete File", "Platform"),
-
-            ("Platform.Audit.Read", "Read Audit Logs", "Platform"),
-
-            ("Platform.Setting.Read", "Read System Settings", "Platform"),
-            ("Platform.Setting.Write", "Write System Settings", "Platform"),
-            ("Platform.Setting.Delete", "Delete System Settings", "Platform"),
-
-            // Reporting
-            ("Reporting.Read", "Read Summary Report", "Reporting"),
-            ("Reporting.CRM.Read", "Read CRM Report", "Reporting"),
-            ("Reporting.Sales.Read", "Read Sales Report", "Reporting"),
-            ("Reporting.Customer.Read", "Read Customer Report", "Reporting"),
-            ("Reporting.Project.Read", "Read Project Report", "Reporting"),
-            ("Reporting.Finance.Read", "Read Finance Report", "Reporting"),
-            ("Reporting.Support.Read", "Read Support Report", "Reporting")
-        };
-
-        // Seed permissions in database
-        var existingPermissions = await dbContext.Set<Modules.Identity.Domain.Entities.Permission>().ToListAsync();
-        var allPermissionEntities = new List<Modules.Identity.Domain.Entities.Permission>(existingPermissions);
-
-        foreach (var p in systemPermissions)
-        {
-            var existing = existingPermissions.FirstOrDefault(ep => ep.Code.Equals(p.Code, StringComparison.OrdinalIgnoreCase));
-            if (existing == null)
-            {
-                var newPerm = Modules.Identity.Domain.Entities.Permission.Create(p.Code, p.Name, p.Module);
-                await dbContext.Set<Modules.Identity.Domain.Entities.Permission>().AddAsync(newPerm);
-                allPermissionEntities.Add(newPerm);
-            }
-        }
-        await dbContext.SaveChangesAsync();
-
-        // Ensure Admin Role exists
         var adminRole = await dbContext.Set<Modules.Identity.Domain.Entities.Role>()
-            .Include(r => r.RolePermissions)
             .FirstOrDefaultAsync(r => r.Name.ToLower() == "admin");
-
-        if (adminRole == null)
-        {
-            adminRole = Modules.Identity.Domain.Entities.Role.Create("Admin", "System Administrator Role");
-            await dbContext.Set<Modules.Identity.Domain.Entities.Role>().AddAsync(adminRole);
-            await dbContext.SaveChangesAsync();
-        }
-
-        // Attach all permissions to Admin role
-        foreach (var perm in allPermissionEntities)
-        {
-            adminRole.AddPermission(perm.Id);
-        }
-        await dbContext.SaveChangesAsync();
 
         var existingUser = await dbContext.Set<Modules.Identity.Domain.Entities.User>()
             .Include(u => u.UserRoles)
@@ -602,10 +459,14 @@ using (var scope = app.Services.CreateScope())
         logger.LogInformation("Applying EF Core database migrations on startup...");
         await dbContext.Database.MigrateAsync();
         logger.LogInformation("Database migrations applied successfully.");
+
+        logger.LogInformation("Seeding system permissions and admin role...");
+        await SystemPermissionsSeeder.SeedAsync(dbContext, logger);
+        logger.LogInformation("System permissions and admin role seeded successfully.");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "An error occurred while applying EF Core database migrations on startup.");
+        logger.LogError(ex, "An error occurred while applying EF Core database migrations or seeding permissions on startup.");
         throw;
     }
 }
