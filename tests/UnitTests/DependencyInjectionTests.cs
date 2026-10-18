@@ -31,11 +31,9 @@ namespace UnitTests;
 
 public class DependencyInjectionTests
 {
-    [Fact]
-    public void ServiceCollection_ShouldResolveKeyInfrastructureAndApplicationServices()
+    private static IConfiguration BuildTestConfiguration()
     {
-        // Arrange
-        var configuration = new ConfigurationBuilder()
+        return new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 { "ConnectionStrings:Database", "Host=localhost;Database=test_db;Username=postgres;Password=postgres" },
@@ -45,6 +43,13 @@ public class DependencyInjectionTests
                 { "Jwt:Audience", "CrmErpClients" }
             })
             .Build();
+    }
+
+    [Fact]
+    public void ServiceCollection_ShouldResolveKeyInfrastructureAndApplicationServices()
+    {
+        // Arrange
+        var configuration = BuildTestConfiguration();
 
         var services = new ServiceCollection();
         services.AddLogging();
@@ -106,16 +111,7 @@ public class DependencyInjectionTests
     [Fact]
     public void LeadsController_CanBeResolvedFromServiceProvider()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                { "ConnectionStrings:Database", "Host=localhost;Database=test_db;Username=postgres;Password=postgres" },
-                { "ASPNETCORE_ENVIRONMENT", "Development" },
-                { "Jwt:Secret", "Development_Placeholder_Jwt_Secret_Key_32_Bytes_Long_Minimum!" },
-                { "Jwt:Issuer", "CrmErpApi" },
-                { "Jwt:Audience", "CrmErpClients" }
-            })
-            .Build();
+        var configuration = BuildTestConfiguration();
 
         var services = new ServiceCollection();
         services.AddLogging();
