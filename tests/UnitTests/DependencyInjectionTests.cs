@@ -97,5 +97,54 @@ public class DependencyInjectionTests
         Assert.NotNull(sp.GetRequiredService<ICustomerService>());
         Assert.NotNull(sp.GetRequiredService<IProjectService>());
         Assert.NotNull(sp.GetRequiredService<ICustomerContactService>());
+
+        // Verify CRM Lead Convert Handler and Validator resolution
+        Assert.NotNull(sp.GetRequiredService<BuildingBlocks.Application.CQRS.ICommandHandler<Modules.CRM.Application.Features.Leads.Commands.ConvertLeadCommand, Modules.CRM.Application.Features.Leads.DTOs.LeadConversionResultDto>>());
+        Assert.NotNull(sp.GetRequiredService<FluentValidation.IValidator<Modules.CRM.Application.Features.Leads.Commands.ConvertLeadCommand>>());
+    }
+
+    [Fact]
+    public void LeadsController_CanBeResolvedFromServiceProvider()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                { "ConnectionStrings:Database", "Host=localhost;Database=test_db;Username=postgres;Password=postgres" },
+                { "ASPNETCORE_ENVIRONMENT", "Development" },
+                { "Jwt:Secret", "Development_Placeholder_Jwt_Secret_Key_32_Bytes_Long_Minimum!" },
+                { "Jwt:Issuer", "CrmErpApi" },
+                { "Jwt:Audience", "CrmErpClients" }
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+
+        services.AddBuildingBlocksCommon();
+        services.AddBuildingBlocksInfrastructure(configuration);
+
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseInMemoryDatabase("LeadsControllerDiTestDb"));
+
+        services.AddIdentityApplication();
+        services.AddIdentityInfrastructure(configuration);
+
+        services.AddCRMApplication();
+        services.AddCRMInfrastructure(configuration);
+
+        services.AddCustomerApplication();
+        services.AddCustomerInfrastructure(configuration);
+
+        // Register LeadsController in DI container
+        services.AddScoped<Modules.CRM.API.Controllers.LeadsController>();
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        using var scope = serviceProvider.CreateScope();
+        var sp = scope.ServiceProvider;
+
+        // Act & Assert
+        var controller = sp.GetRequiredService<Modules.CRM.API.Controllers.LeadsController>();
+        Assert.NotNull(controller);
     }
 }

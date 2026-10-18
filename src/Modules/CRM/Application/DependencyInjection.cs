@@ -52,6 +52,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<QualifyLeadCommand, LeadDto>, QualifyLeadCommandHandler>();
         services.AddScoped<ICommandHandler<DisqualifyLeadCommand, LeadDto>, DisqualifyLeadCommandHandler>();
         services.AddScoped<ICommandHandler<ArchiveLeadCommand>, ArchiveLeadCommandHandler>();
+        services.AddScoped<ICommandHandler<ConvertLeadCommand, LeadConversionResultDto>, ConvertLeadCommandHandler>();
 
         services.AddScoped<IQueryHandler<GetLeadByIdQuery, LeadDto>, GetLeadByIdQueryHandler>();
         services.AddScoped<IQueryHandler<GetLeadsQuery, PagedResult<LeadListItemDto>>, GetLeadsQueryHandler>();
@@ -86,6 +87,7 @@ public static class DependencyInjection
         services.AddScoped<IValidator<ChangeLeadStatusCommand>, ChangeLeadStatusCommandValidator>();
         services.AddScoped<IValidator<QualifyLeadCommand>, QualifyLeadCommandValidator>();
         services.AddScoped<IValidator<DisqualifyLeadCommand>, DisqualifyLeadCommandValidator>();
+        services.AddScoped<IValidator<ConvertLeadCommand>, ConvertLeadCommandValidator>();
 
         services.AddScoped<IValidator<CreateActivityCommand>, CreateActivityCommandValidator>();
         services.AddScoped<IValidator<UpdateActivityCommand>, UpdateActivityCommandValidator>();

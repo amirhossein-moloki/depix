@@ -26,6 +26,7 @@
     <ProjectReference Include="..\..\src\Modules\CRM\Domain\Modules.CRM.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\CRM\Application\Modules.CRM.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\CRM\Infrastructure\Modules.CRM.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Modules\CRM\API\Modules.CRM.API.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Domain\Modules.Sales.Domain.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Application\Modules.Sales.Application.csproj" />
     <ProjectReference Include="..\..\src\Modules\Sales\Infrastructure\Modules.Sales.Infrastructure.csproj" />
