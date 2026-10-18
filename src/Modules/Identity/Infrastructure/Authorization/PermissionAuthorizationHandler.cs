@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Modules.Identity.Infrastructure.Authorization;
@@ -18,6 +19,14 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
     {
         if (context.User == null)
         {
+            return Task.CompletedTask;
+        }
+
+        if (context.User.IsInRole("Admin") ||
+            context.User.HasClaim(c => (c.Type == ClaimTypes.Role || c.Type == "roles") &&
+                                       c.Value.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
+        {
+            context.Succeed(requirement);
             return Task.CompletedTask;
         }
 

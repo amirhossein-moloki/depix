@@ -48,4 +48,42 @@ public class PermissionAuthorizationHandlerTests
         // Assert
         Assert.False(context.HasSucceeded);
     }
+
+    [Fact]
+    public void HandleAsync_UserIsAdminRole_ShouldSucceedWithoutExplicitPermission()
+    {
+        // Arrange
+        var requirement = new PermissionRequirement("Reporting.Read");
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim(ClaimTypes.Role, "Admin")
+        }, "TestAuth"));
+
+        var context = new AuthorizationHandlerContext(new[] { requirement }, user, null);
+
+        // Act
+        _handler.HandleAsync(context);
+
+        // Assert
+        Assert.True(context.HasSucceeded);
+    }
+
+    [Fact]
+    public void HandleAsync_UserIsAdminCustomRoleClaim_ShouldSucceedWithoutExplicitPermission()
+    {
+        // Arrange
+        var requirement = new PermissionRequirement("Support.Ticket.Read");
+        var user = new ClaimsPrincipal(new ClaimsIdentity(new[]
+        {
+            new Claim("roles", "Admin")
+        }, "TestAuth"));
+
+        var context = new AuthorizationHandlerContext(new[] { requirement }, user, null);
+
+        // Act
+        _handler.HandleAsync(context);
+
+        // Assert
+        Assert.True(context.HasSucceeded);
+    }
 }
