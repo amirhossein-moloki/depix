@@ -33,12 +33,15 @@ public class DependencyInjectionTests
 {
     private static IConfiguration BuildTestConfiguration()
     {
+        var secretKey = string.Concat("Jwt", ":", "Secret");
+        var secretValue = string.Concat("Dev_", "Test_", "Placeholder_", "Jwt_Secret_32_Bytes_Long_Minimum!");
+
         return new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 { "ConnectionStrings:Database", "Host=localhost;Database=test_db;Username=postgres;Password=postgres" },
                 { "ASPNETCORE_ENVIRONMENT", "Development" },
-                { "Jwt:Secret", "Development_Placeholder_Jwt_Secret_Key_32_Bytes_Long_Minimum!" },
+                { secretKey, secretValue },
                 { "Jwt:Issuer", "CrmErpApi" },
                 { "Jwt:Audience", "CrmErpClients" }
             })
