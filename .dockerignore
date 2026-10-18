@@ -1,0 +1,38 @@
+# Git and repository metadata
+.git
+.git*
+.github
+
+# Build and output directories
+bin/
+obj/
+publish/
+**/publish/
+dist/
+build/
+out/
+
+# Node / Next.js artifacts
+node_modules/
+**/node_modules/
+.next/
+**/.next/
+.npm/
+.yarn/
+
+# IDE and OS files
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+.DS_Store
+
+# Logs and environment files
+*.log
+logs/
+**/logs/
+.env
+.env.*
+!.env.example
+!.env.production.example
