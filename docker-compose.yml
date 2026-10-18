@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -51,8 +49,8 @@ services:
 
   frontend:
     build:
-      context: /var/www/dedpix
-      dockerfile: Dockerfile
+      context: ${FRONTEND_PATH:-/var/www/dedpix}
+      dockerfile: ${FRONTEND_DOCKERFILE:-Dockerfile}
     container_name: depix-frontend
     restart: unless-stopped
     environment:
