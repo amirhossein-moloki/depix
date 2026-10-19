@@ -142,40 +142,109 @@ public static class IdentityDataSeeder
             logger?.LogInformation("Seeded missing system permissions into database.");
         }
 
-        // Ensure Admin Role exists
-        var adminRole = await dbContext.Set<Role>()
-            .FirstOrDefaultAsync(r => r.Name.ToLower() == "admin", cancellationToken);
-
-        if (adminRole == null)
+        var defaultRoles = new (string Name, string Description, Func<Permission, bool> PermFilter)[]
         {
-            adminRole = Role.Create("Admin", "System Administrator Role");
-            await dbContext.Set<Role>().AddAsync(adminRole, cancellationToken);
-            await dbContext.SaveChangesAsync(cancellationToken);
-            logger?.LogInformation("Created Admin role in database.");
+            ("Admin", "System Administrator Role", _ => true),
+            ("User", "Standard System User Role", p =>
+                p.Code.EndsWith(".Read") ||
+                p.Code == "CRM.Lead.Create" || p.Code == "CRM.Activity.Create" || p.Code == "CRM.SalesNote.Create" ||
+                p.Code == "Support.Ticket.Create" || p.Code == "Support.Comment.Create" ||
+                p.Code == "Platform.Task.Create" || p.Code == "Platform.Task.Update" || p.Code == "Platform.File.Create"),
+            ("SalesManager", "Sales Manager Role", p =>
+                p.Module == "CRM" || p.Module == "Sales" ||
+                p.Module == "Customer" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.CRM.Read" || p.Code == "Reporting.Sales.Read" || p.Code == "Reporting.Customer.Read" ||
+                (p.Module == "Platform" && !p.Code.StartsWith("Platform.Audit") && !p.Code.StartsWith("Platform.Setting.Write"))),
+            ("Sales", "Sales Representative Role", p =>
+                (p.Module == "CRM" && !p.Code.EndsWith(".Delete")) ||
+                (p.Module == "Sales" && !p.Code.EndsWith(".Delete") && p.Code != "Sales.Opportunity.Close") ||
+                p.Code == "Customer.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.CRM.Read" || p.Code == "Reporting.Sales.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File.")),
+            ("SalesRep", "Sales Representative Role", p =>
+                (p.Module == "CRM" && !p.Code.EndsWith(".Delete")) ||
+                (p.Module == "Sales" && !p.Code.EndsWith(".Delete") && p.Code != "Sales.Opportunity.Close") ||
+                p.Code == "Customer.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.CRM.Read" || p.Code == "Reporting.Sales.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File.")),
+            ("SupportAgent", "Support Specialist Role", p =>
+                p.Module == "Support" ||
+                p.Code == "Customer.Read" || p.Code == "Customer.Update" || p.Code == "CRM.Contact.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.Support.Read" || p.Code == "Reporting.Customer.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File.")),
+            ("Support", "Support Specialist Role", p =>
+                p.Module == "Support" ||
+                p.Code == "Customer.Read" || p.Code == "Customer.Update" || p.Code == "CRM.Contact.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.Support.Read" || p.Code == "Reporting.Customer.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File.")),
+            ("FinanceManager", "Finance Manager Role", p =>
+                p.Module == "Finance" ||
+                p.Code == "Sales.Proposal.Read" || p.Code == "Customer.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.Finance.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File.")),
+            ("Finance", "Finance Specialist Role", p =>
+                p.Module == "Finance" ||
+                p.Code == "Sales.Proposal.Read" || p.Code == "Customer.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.Finance.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File.")),
+            ("ProjectManager", "Project Manager Role", p =>
+                p.Module == "Project" ||
+                p.Code == "Customer.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.Project.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File.")),
+            ("Project", "Project Specialist Role", p =>
+                p.Module == "Project" ||
+                p.Code == "Customer.Read" ||
+                p.Code == "Reporting.Read" || p.Code == "Reporting.Project.Read" ||
+                p.Code.StartsWith("Platform.Task.") || p.Code.StartsWith("Platform.File."))
+        };
+
+        var existingRoles = await dbContext.Set<Role>().ToListAsync(cancellationToken);
+        var rolesMap = existingRoles.ToDictionary(r => r.Name, StringComparer.OrdinalIgnoreCase);
+        bool rolesCreated = false;
+
+        foreach (var def in defaultRoles)
+        {
+            if (!rolesMap.TryGetValue(def.Name, out var roleEntity))
+            {
+                roleEntity = Role.Create(def.Name, def.Description);
+                await dbContext.Set<Role>().AddAsync(roleEntity, cancellationToken);
+                rolesMap[def.Name] = roleEntity;
+                rolesCreated = true;
+            }
         }
 
-        // Ensure all permissions are attached to Admin role
-        var existingRolePerms = await dbContext.Set<RolePermission>()
-            .Where(rp => rp.RoleId == adminRole.Id)
-            .ToListAsync(cancellationToken);
+        if (rolesCreated)
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            logger?.LogInformation("Seeded missing system default roles in database.");
+        }
 
-        var existingRolePermIds = existingRolePerms.Select(rp => rp.PermissionId).ToHashSet();
+        var allRolePermissions = await dbContext.Set<RolePermission>().ToListAsync(cancellationToken);
+        var rolePermSet = allRolePermissions.Select(rp => (rp.RoleId, rp.PermissionId)).ToHashSet();
         bool rolePermsChanged = false;
 
-        foreach (var perm in permissionsMap.Values)
+        foreach (var def in defaultRoles)
         {
-            if (!existingRolePermIds.Contains(perm.Id))
+            if (rolesMap.TryGetValue(def.Name, out var roleEntity))
             {
-                await dbContext.Set<RolePermission>().AddAsync(new RolePermission(adminRole.Id, perm.Id), cancellationToken);
-                existingRolePermIds.Add(perm.Id);
-                rolePermsChanged = true;
+                var targetPerms = permissionsMap.Values.Where(def.PermFilter).ToList();
+                foreach (var perm in targetPerms)
+                {
+                    if (!rolePermSet.Contains((roleEntity.Id, perm.Id)))
+                    {
+                        await dbContext.Set<RolePermission>().AddAsync(new RolePermission(roleEntity.Id, perm.Id), cancellationToken);
+                        rolePermSet.Add((roleEntity.Id, perm.Id));
+                        rolePermsChanged = true;
+                    }
+                }
             }
         }
 
         if (rolePermsChanged)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
-            logger?.LogInformation("Attached all permissions to Admin role.");
+            logger?.LogInformation("Attached permissions to system roles successfully.");
         }
     }
 }
