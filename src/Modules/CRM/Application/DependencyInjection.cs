@@ -46,6 +46,8 @@ public static class DependencyInjection
 
         // Leads Handlers
         services.AddScoped<ICommandHandler<CreateLeadCommand, LeadDto>, CreateLeadCommandHandler>();
+        services.AddScoped<ICommandHandler<SubmitFreeConsultationCommand, LeadDto>, SubmitFreeConsultationCommandHandler>();
+        services.AddScoped<ICommandHandler<SubmitInstagramLeadCommand, LeadDto>, SubmitInstagramLeadCommandHandler>();
         services.AddScoped<ICommandHandler<UpdateLeadCommand, LeadDto>, UpdateLeadCommandHandler>();
         services.AddScoped<ICommandHandler<AssignLeadCommand, LeadDto>, AssignLeadCommandHandler>();
         services.AddScoped<ICommandHandler<ChangeLeadStatusCommand, LeadDto>, ChangeLeadStatusCommandHandler>();
@@ -82,6 +84,8 @@ public static class DependencyInjection
         services.AddScoped<IValidator<UpdateContactCommand>, UpdateContactCommandValidator>();
 
         services.AddScoped<IValidator<CreateLeadCommand>, CreateLeadCommandValidator>();
+        services.AddScoped<IValidator<SubmitFreeConsultationCommand>, SubmitFreeConsultationCommandValidator>();
+        services.AddScoped<IValidator<SubmitInstagramLeadCommand>, SubmitInstagramLeadCommandValidator>();
         services.AddScoped<IValidator<UpdateLeadCommand>, UpdateLeadCommandValidator>();
         services.AddScoped<IValidator<AssignLeadCommand>, AssignLeadCommandValidator>();
         services.AddScoped<IValidator<ChangeLeadStatusCommand>, ChangeLeadStatusCommandValidator>();
