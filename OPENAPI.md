@@ -1,10 +1,10 @@
-# Depix API — Unified Swagger & OpenAPI Specification
+# Depix API — Unified Swagger, ReDoc & OpenAPI Specification
 
 ## 1. Overview & Repository Audit
 
 This repository (`depix`) houses the backend infrastructure for the **Depix Platform**.
 
-The backend service is implemented as a .NET 8 Modular Monolith CRM/ERP system (`CrmErp`), exposing OpenAPI/Swagger documentation.
+The backend service is implemented as a .NET 8 Modular Monolith CRM/ERP system (`CrmErp`), exposing OpenAPI/Swagger and ReDoc documentation.
 
 ---
 
@@ -27,17 +27,19 @@ The backend service is implemented as a .NET 8 Modular Monolith CRM/ERP system (
 The Nginx Reverse Proxy / API Gateway routes incoming requests from the single unified external surface (`http://localhost:8080` or production domain) to the backend service:
 
 - `/api/docs` -> Unified Swagger UI Entry Point
+- `/api/redoc` -> Unified ReDoc UI Entry Point
 - `/api/openapi.json` -> Raw OpenAPI Specification
 - `/api/v1/health` -> Unified Health Check
 - `/api/auth/*` & `/api/sales/*`, `/api/crm/*`, `/api/customer/*`, `/api/project/*`, `/api/finance/*`, `/api/support/*`, `/api/platform/*` -> Core .NET Modular Monolith API
 
 ---
 
-## 3. Swagger UI & Raw OpenAPI Endpoints
+## 3. Documentation UI & Raw OpenAPI Endpoints
 
 | Resource | Path | Description |
 | :--- | :--- | :--- |
 | **Swagger UI** | `/api/docs` | Interactive Swagger UI documentation |
+| **ReDoc UI** | `/api/redoc` | Modern 3-panel ReDoc API Reference |
 | **OpenAPI Spec (JSON)** | `/api/openapi.json` | Raw OpenAPI Specification (JSON) |
 | **Health Endpoint** | `/api/v1/health` | Service & Database Health Status |
 
@@ -142,7 +144,7 @@ ApiError:
 
 | Category Tag | Description | Implementation Status |
 | :--- | :--- | :--- |
-| **System** | `/health`, `/api/v1/health`, `/api/docs`, `/api/openapi.json` | `IMPLEMENTED` |
+| **System** | `/health`, `/api/v1/health`, `/api/docs`, `/api/redoc`, `/api/openapi.json` | `IMPLEMENTED` |
 | **Authentication** | `/api/auth/login`, `/api/auth/refresh`, `/api/auth/logout`, `/api/auth/me` | `IMPLEMENTED` |
 | **CRM** | Leads, Companies, Contacts, Activities, Sales Notes | `IMPLEMENTED` |
 | **Sales** | Opportunities, Opportunity Pipeline, Proposals | `IMPLEMENTED` |
@@ -175,6 +177,7 @@ docker-compose up --build
 ```
 Access points:
 - Swagger UI: `http://localhost:8080/api/docs`
+- ReDoc UI: `http://localhost:8080/api/redoc`
 - OpenAPI Specification: `http://localhost:8080/api/openapi.json`
 - Gateway Health: `http://localhost:8080/api/v1/health`
 

@@ -557,6 +557,13 @@ if (app.Environment.IsDevelopment() || openApiEnabled)
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Depix API v1");
         c.RoutePrefix = "swagger";
     });
+
+    app.UseReDoc(c =>
+    {
+        c.SpecUrl("/swagger/v1/swagger.json");
+        c.DocumentTitle = "Depix API Reference Documentation";
+        c.RoutePrefix = "redoc";
+    });
 }
 
 var httpsPort = builder.Configuration.GetValue<int?>("HTTPS_PORT");
@@ -584,6 +591,11 @@ app.MapGet("/api/openapi.json", (HttpContext context) =>
 app.MapGet("/api/docs", (HttpContext context) =>
 {
     context.Response.Redirect("/swagger/index.html", permanent: false);
+});
+
+app.MapGet("/api/redoc", (HttpContext context) =>
+{
+    context.Response.Redirect("/redoc/index.html", permanent: false);
 });
 
 app.MapGet("/", () => Results.Ok(new
