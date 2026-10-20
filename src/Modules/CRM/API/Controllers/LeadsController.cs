@@ -20,6 +20,8 @@ namespace Modules.CRM.API.Controllers;
 public class LeadsController : ControllerBase
 {
     private readonly ICommandHandler<CreateLeadCommand, LeadDto> _createLeadHandler;
+    private readonly ICommandHandler<SubmitFreeConsultationCommand, LeadDto> _freeConsultationHandler;
+    private readonly ICommandHandler<SubmitInstagramLeadCommand, LeadDto> _instagramLeadHandler;
     private readonly ICommandHandler<UpdateLeadCommand, LeadDto> _updateLeadHandler;
     private readonly ICommandHandler<AssignLeadCommand, LeadDto> _assignLeadHandler;
     private readonly ICommandHandler<ChangeLeadStatusCommand, LeadDto> _changeLeadStatusHandler;
@@ -34,6 +36,8 @@ public class LeadsController : ControllerBase
     private readonly IQueryHandler<GetLeadPipelineQuery, LeadPipelineDto> _getLeadPipelineHandler;
 
     private readonly IValidator<CreateLeadCommand> _createValidator;
+    private readonly IValidator<SubmitFreeConsultationCommand> _freeConsultationValidator;
+    private readonly IValidator<SubmitInstagramLeadCommand> _instagramLeadValidator;
     private readonly IValidator<UpdateLeadCommand> _updateValidator;
     private readonly IValidator<AssignLeadCommand> _assignValidator;
     private readonly IValidator<ChangeLeadStatusCommand> _changeStatusValidator;
@@ -44,6 +48,8 @@ public class LeadsController : ControllerBase
 
     public LeadsController(
         ICommandHandler<CreateLeadCommand, LeadDto> createLeadHandler,
+        ICommandHandler<SubmitFreeConsultationCommand, LeadDto> freeConsultationHandler,
+        ICommandHandler<SubmitInstagramLeadCommand, LeadDto> instagramLeadHandler,
         ICommandHandler<UpdateLeadCommand, LeadDto> updateLeadHandler,
         ICommandHandler<AssignLeadCommand, LeadDto> assignLeadHandler,
         ICommandHandler<ChangeLeadStatusCommand, LeadDto> changeLeadStatusHandler,
@@ -56,6 +62,8 @@ public class LeadsController : ControllerBase
         IQueryHandler<SearchLeadsQuery, PagedResult<LeadListItemDto>> searchLeadsHandler,
         IQueryHandler<GetLeadPipelineQuery, LeadPipelineDto> getLeadPipelineHandler,
         IValidator<CreateLeadCommand> createValidator,
+        IValidator<SubmitFreeConsultationCommand> freeConsultationValidator,
+        IValidator<SubmitInstagramLeadCommand> instagramLeadValidator,
         IValidator<UpdateLeadCommand> updateValidator,
         IValidator<AssignLeadCommand> assignValidator,
         IValidator<ChangeLeadStatusCommand> changeStatusValidator,
@@ -65,6 +73,8 @@ public class LeadsController : ControllerBase
         ILogger<LeadsController> logger)
     {
         _createLeadHandler = createLeadHandler;
+        _freeConsultationHandler = freeConsultationHandler;
+        _instagramLeadHandler = instagramLeadHandler;
         _updateLeadHandler = updateLeadHandler;
         _assignLeadHandler = assignLeadHandler;
         _changeLeadStatusHandler = changeLeadStatusHandler;
@@ -77,6 +87,8 @@ public class LeadsController : ControllerBase
         _searchLeadsHandler = searchLeadsHandler;
         _getLeadPipelineHandler = getLeadPipelineHandler;
         _createValidator = createValidator;
+        _freeConsultationValidator = freeConsultationValidator;
+        _instagramLeadValidator = instagramLeadValidator;
         _updateValidator = updateValidator;
         _assignValidator = assignValidator;
         _changeStatusValidator = changeStatusValidator;
@@ -112,6 +124,52 @@ public class LeadsController : ControllerBase
         var lead = await _createLeadHandler.HandleAsync(command, cancellationToken);
         _logger.LogInformation("Lead {LeadId} created successfully with Title '{Title}'", lead.Id, lead.Title);
         return CreatedAtAction(nameof(GetLeadById), new { id = lead.Id }, ResponseFactory.Success(lead, "Lead created successfully."));
+    }
+
+    [HttpPost("free-consultation")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SubmitFreeConsultation([FromBody] FreeConsultationRequest request, CancellationToken cancellationToken)
+    {
+        var command = new SubmitFreeConsultationCommand(
+            request.UserName,
+            request.PhoneNumber,
+            request.Email,
+            request.Description
+        );
+
+        var validationResult = await _freeConsultationValidator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(e => new ValidationErrorDetail(e.PropertyName, e.ErrorMessage)).ToList();
+            throw new ValidationException("Free consultation request validation failed.", errors);
+        }
+
+        var lead = await _freeConsultationHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Free consultation request submitted successfully for {UserName}, LeadId: {LeadId}", request.UserName, lead.Id);
+        return CreatedAtAction(nameof(GetLeadById), new { id = lead.Id }, ResponseFactory.Success(lead, "Free consultation request submitted successfully."));
+    }
+
+    [HttpPost("instagram")]
+    [AllowAnonymous]
+    public async Task<IActionResult> SubmitInstagramLead([FromBody] InstagramLeadRequest request, CancellationToken cancellationToken)
+    {
+        var command = new SubmitInstagramLeadCommand(
+            request.BrandName,
+            request.PhoneNumber,
+            request.InstagramId,
+            request.Description
+        );
+
+        var validationResult = await _instagramLeadValidator.ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            var errors = validationResult.Errors.Select(e => new ValidationErrorDetail(e.PropertyName, e.ErrorMessage)).ToList();
+            throw new ValidationException("Instagram lead request validation failed.", errors);
+        }
+
+        var lead = await _instagramLeadHandler.HandleAsync(command, cancellationToken);
+        _logger.LogInformation("Instagram lead submitted successfully for {BrandName} (@{InstagramId}), LeadId: {LeadId}", request.BrandName, request.InstagramId, lead.Id);
+        return CreatedAtAction(nameof(GetLeadById), new { id = lead.Id }, ResponseFactory.Success(lead, "Instagram lead submitted successfully."));
     }
 
     [HttpGet]
