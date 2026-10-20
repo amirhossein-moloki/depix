@@ -56,7 +56,7 @@ Granular permission strings follow the pattern `{Module}.{Entity}.{Action}`:
 | API Category | Path / Endpoint | Public | Admin / Staff | Authentication Scheme |
 | :--- | :--- | :---: | :---: | :--- |
 | **Health Check** | `/health`, `/api/v1/health` | ✓ | ✓ | None |
-| **OpenAPI Docs** | `/api/docs`, `/api/openapi.json` | ✓ | ✓ | None |
+| **OpenAPI Docs** | `/api/docs`, `/api/redoc`, `/api/openapi.json` | ✓ | ✓ | None |
 | **Auth Endpoints** | `/api/auth/login`, `/api/auth/register`, `/api/auth/refresh` | ✓ | ✓ | None |
 | **User Approval & Admin Endpoints** | `/api/users`, `/api/users/pending`, `/api/users/{id}/approve`, `/api/users/{id}/reject` | ✕ | Admin | JWT Bearer (`bearerAuth`) |
 | **Sales Visits Endpoints** | `/api/crm/sales-visits`, `/api/crm/companies/{id}/visits` | ✕ | Staff | JWT Bearer (`bearerAuth`) |

@@ -106,7 +106,7 @@ Key Configuration Keys:
 - `Jwt__AccessTokenExpirationMinutes`: Access token lifespan in minutes (default: `60`).
 - `Jwt__RefreshTokenExpirationDays`: Refresh token lifespan in days (default: `7`).
 - `Cors__AllowedOrigins`: JSON array or env vars specifying allowed CORS origins (e.g. `Cors__AllowedOrigins__0=https://crm.yourdomain.com`).
-- `OPENAPI_ENABLED`: Set to `true` to enable Swagger UI and `/api/docs` documentation endpoint.
+- `OPENAPI_ENABLED`: Set to `true` to enable Swagger UI (`/api/docs`), ReDoc UI (`/api/redoc`), and `/swagger/v1/swagger.json` endpoints.
 
 ### B. Database Migrations
 Migrations are maintained under `src/Host/CrmErp.Host/Migrations` targeting `ApplicationDbContext`.
@@ -123,8 +123,9 @@ Note: Automated startup migration execution and destructive operations like `Ens
 - **Detailed Health Information**: `GET /api/v1/health` returns JSON system status and UTC timestamp.
 - **Correlation ID**: Every HTTP request is assigned or preserves an `X-Correlation-ID` header, propagated through logs and error responses.
 
-### D. Swagger / OpenAPI Documentation
-- **Swagger UI**: Accessible at `/api/docs` when `OPENAPI_ENABLED=true` or in Development mode.
+### D. Swagger & ReDoc OpenAPI Documentation
+- **Swagger UI**: Accessible at `/api/docs` or `/swagger` when `OPENAPI_ENABLED=true` or in Development mode.
+- **ReDoc UI**: Accessible at `/api/redoc` or `/redoc` when `OPENAPI_ENABLED=true` or in Development mode.
 - **OpenAPI JSON**: Available at `/swagger/v1/swagger.json` or redirected from `/api/openapi.json`.
 - **Security Schemes**: Supports JWT Bearer (`bearerAuth`).
 
@@ -149,6 +150,7 @@ docker compose ps
 Endpoints when running via Docker Compose:
 - **API Gateway (Nginx)**: `http://localhost:8080/`
 - **Swagger Documentation**: `http://localhost:8080/api/docs`
+- **ReDoc Documentation**: `http://localhost:8080/api/redoc`
 - **Health Check**: `http://localhost:8080/health`
 
 ### Manual Execution & Testing
