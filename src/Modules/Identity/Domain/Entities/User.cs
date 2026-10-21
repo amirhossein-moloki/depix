@@ -108,6 +108,22 @@ public class User : AuditableAggregateRoot
         UpdateTimestamp(DateTime.UtcNow);
     }
 
+    public void ClearRoles()
+    {
+        _userRoles.Clear();
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
+    public void SetRoles(IEnumerable<Guid> roleIds)
+    {
+        _userRoles.Clear();
+        foreach (var roleId in roleIds.Distinct())
+        {
+            _userRoles.Add(new UserRole(Id, roleId));
+        }
+        UpdateTimestamp(DateTime.UtcNow);
+    }
+
     public void AddRefreshToken(RefreshToken token)
     {
         _refreshTokens.Add(token);

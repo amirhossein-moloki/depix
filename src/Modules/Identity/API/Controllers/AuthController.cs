@@ -33,7 +33,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
     {
         var user = await _authUseCaseService.RegisterPublicUserAsync(request, cancellationToken);
-        return Ok(ApiResponse<UserDto>.SuccessResponse(user, "Registration successful. Account is pending administrator approval."));
+        return Ok(ApiResponse<UserDto>.SuccessResponse(user, "Registration successful. You can now log in to your account."));
     }
 
     [HttpPost("refresh")]

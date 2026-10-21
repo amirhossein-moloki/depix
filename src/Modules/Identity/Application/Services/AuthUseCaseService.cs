@@ -16,11 +16,21 @@ public interface IAuthUseCaseService
     Task<CurrentUserDto> GetCurrentUserAsync(Guid userId, CancellationToken cancellationToken = default);
     Task<UserDto> RegisterPublicUserAsync(RegisterUserRequest request, CancellationToken cancellationToken = default);
     Task<UserDto> CreateUserByAdminAsync(CreateUserByAdminRequest request, CancellationToken cancellationToken = default);
+    Task<List<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default);
+    Task<UserDto> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<UserDto> UpdateUserByAdminAsync(Guid targetUserId, Guid adminUserId, UpdateUserByAdminRequest request, CancellationToken cancellationToken = default);
+    Task<UserDto> UpdateUserRolesAsync(Guid targetUserId, Guid adminUserId, UpdateUserRolesRequest request, CancellationToken cancellationToken = default);
+    Task DeleteUserByAdminAsync(Guid targetUserId, Guid adminUserId, CancellationToken cancellationToken = default);
     Task<List<UserDto>> GetPendingUsersAsync(CancellationToken cancellationToken = default);
     Task<UserDto> ApproveUserAsync(Guid targetUserId, Guid adminUserId, CancellationToken cancellationToken = default);
     Task<UserDto> RejectUserAsync(Guid targetUserId, Guid adminUserId, string? reason = null, CancellationToken cancellationToken = default);
     Task ResetPasswordAsync(Guid userId, ResetPasswordRequest request, CancellationToken cancellationToken = default);
     Task<UserDto> ResetUserPasswordByAdminAsync(Guid targetUserId, Guid adminUserId, AdminResetPasswordRequest request, CancellationToken cancellationToken = default);
+
+    // Role & Permission Management
+    Task<List<RoleDto>> GetAllRolesAsync(CancellationToken cancellationToken = default);
+    Task<List<PermissionDto>> GetAllPermissionsAsync(CancellationToken cancellationToken = default);
+    Task<RoleDto> UpdateRolePermissionsAsync(Guid roleId, Guid adminUserId, UpdateRolePermissionsRequest request, CancellationToken cancellationToken = default);
 }
 
 public class AuthUseCaseService : IAuthUseCaseService
@@ -240,7 +250,7 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         var hashedPassword = _passwordHasherService.HashPassword(request.Password);
-        var newUser = User.Create(request.FirstName, request.LastName, request.Email, hashedPassword, request.Phone, UserStatus.PendingApproval);
+        var newUser = User.Create(request.FirstName, request.LastName, request.Email, hashedPassword, request.Phone, UserStatus.Active);
 
         var allRoles = await _roleRepository.GetAllAsync(cancellationToken);
         var defaultRole = allRoles.FirstOrDefault(r => r.Name.Equals("User", StringComparison.OrdinalIgnoreCase))
@@ -252,8 +262,8 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         await _userRepository.AddAsync(newUser, cancellationToken);
-        _logger.LogInformation("User {UserId} registered via public portal with PendingApproval status", newUser.Id);
-        await _auditEventLogger.LogAsync("USER_REGISTERED", newUser.Id, "User registered via public portal (Pending Approval).", cancellationToken);
+        _logger.LogInformation("User {UserId} registered via public portal with Active status", newUser.Id);
+        await _auditEventLogger.LogAsync("USER_REGISTERED", newUser.Id, "User registered via public portal.", cancellationToken);
 
         var userRoles = await _roleRepository.GetRolesByUserIdAsync(newUser.Id, cancellationToken);
         return MapToUserDto(newUser, userRoles.Select(r => r.Name).ToList());
@@ -305,6 +315,137 @@ public class AuthUseCaseService : IAuthUseCaseService
         return MapToUserDto(newUser, assignedRoles.Select(r => r.Name).ToList());
     }
 
+    public async Task<List<UserDto>> GetAllUsersAsync(CancellationToken cancellationToken = default)
+    {
+        var users = await _userRepository.GetAllAsync(cancellationToken);
+        var dtos = new List<UserDto>();
+
+        foreach (var user in users)
+        {
+            var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+            dtos.Add(MapToUserDto(user, roles.Select(r => r.Name).ToList()));
+        }
+
+        return dtos;
+    }
+
+    public async Task<UserDto> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", userId);
+        }
+
+        var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+        return MapToUserDto(user, roles.Select(r => r.Name).ToList());
+    }
+
+    public async Task<UserDto> UpdateUserByAdminAsync(Guid targetUserId, Guid adminUserId, UpdateUserByAdminRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email))
+        {
+            throw new ValidationException("Email is required.");
+        }
+
+        var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", targetUserId);
+        }
+
+        var existingUserWithEmail = await _userRepository.GetByEmailAsync(request.Email, cancellationToken);
+        if (existingUserWithEmail != null && existingUserWithEmail.Id != user.Id)
+        {
+            throw new BusinessRuleException("Another user with this email already exists.");
+        }
+
+        user.UpdateProfile(request.FirstName, request.LastName, request.Email, request.Phone);
+
+        if (!string.IsNullOrWhiteSpace(request.Status) && Enum.TryParse<UserStatus>(request.Status, true, out var newStatus))
+        {
+            user.SetStatus(newStatus);
+        }
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+        _logger.LogInformation("User {UserId} updated by Admin {AdminId}", user.Id, adminUserId);
+        await _auditEventLogger.LogAsync("USER_UPDATED_BY_ADMIN", user.Id, $"User details updated by Admin ID: {adminUserId}", cancellationToken);
+
+        var roles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+        return MapToUserDto(user, roles.Select(r => r.Name).ToList());
+    }
+
+    public async Task<UserDto> UpdateUserRolesAsync(Guid targetUserId, Guid adminUserId, UpdateUserRolesRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", targetUserId);
+        }
+
+        var allRoles = await _roleRepository.GetAllAsync(cancellationToken);
+        var matchingRoleIds = new List<Guid>();
+
+        if (request.RoleNames != null && request.RoleNames.Any())
+        {
+            foreach (var roleName in request.RoleNames.Distinct())
+            {
+                var role = allRoles.FirstOrDefault(r => r.Name.Equals(roleName, StringComparison.OrdinalIgnoreCase));
+                if (role != null)
+                {
+                    matchingRoleIds.Add(role.Id);
+                }
+            }
+        }
+
+        user.SetRoles(matchingRoleIds);
+        await _userRepository.UpdateAsync(user, cancellationToken);
+
+        _logger.LogInformation("Roles for user {UserId} updated by Admin {AdminId}", user.Id, adminUserId);
+        await _auditEventLogger.LogAsync("USER_ROLES_UPDATED_BY_ADMIN", user.Id, $"User roles updated by Admin ID: {adminUserId}", cancellationToken);
+
+        var assignedRoles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+        return MapToUserDto(user, assignedRoles.Select(r => r.Name).ToList());
+    }
+
+    public async Task DeleteUserByAdminAsync(Guid targetUserId, Guid adminUserId, CancellationToken cancellationToken = default)
+    {
+        if (targetUserId == adminUserId)
+        {
+            throw new BusinessRuleException("Administrators cannot delete their own account.");
+        }
+
+        var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (user == null)
+        {
+            throw new EntityNotFoundException("User", targetUserId);
+        }
+
+        var userRoles = await _roleRepository.GetRolesByUserIdAsync(user.Id, cancellationToken);
+        if (userRoles.Any(r => r.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
+        {
+            var allUsers = await _userRepository.GetAllAsync(cancellationToken);
+            var adminCount = 0;
+            foreach (var u in allUsers)
+            {
+                var roles = await _roleRepository.GetRolesByUserIdAsync(u.Id, cancellationToken);
+                if (roles.Any(r => r.Name.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
+                {
+                    adminCount++;
+                }
+            }
+
+            if (adminCount <= 1)
+            {
+                throw new BusinessRuleException("Cannot delete the last administrator in the system.");
+            }
+        }
+
+        await _userRepository.DeleteAsync(user, cancellationToken);
+        _logger.LogInformation("User {UserId} deleted by Admin {AdminId}", targetUserId, adminUserId);
+        await _auditEventLogger.LogAsync("USER_DELETED_BY_ADMIN", targetUserId, $"User deleted by Admin ID: {adminUserId}", cancellationToken);
+    }
+
     public async Task<List<UserDto>> GetPendingUsersAsync(CancellationToken cancellationToken = default)
     {
         var pendingUsers = await _userRepository.GetPendingUsersAsync(cancellationToken);
@@ -317,6 +458,58 @@ public class AuthUseCaseService : IAuthUseCaseService
         }
 
         return dtos;
+    }
+
+    public async Task<List<RoleDto>> GetAllRolesAsync(CancellationToken cancellationToken = default)
+    {
+        var roles = await _roleRepository.GetAllAsync(cancellationToken);
+        var allPermissions = await _permissionRepository.GetAllAsync(cancellationToken);
+        var permDict = allPermissions.ToDictionary(p => p.Id);
+
+        var result = new List<RoleDto>();
+        foreach (var role in roles)
+        {
+            var permDtos = role.RolePermissions
+                .Where(rp => permDict.ContainsKey(rp.PermissionId))
+                .Select(rp => permDict[rp.PermissionId])
+                .Select(p => new PermissionDto(p.Id, p.Code, p.Name, p.Module))
+                .ToList();
+
+            result.Add(new RoleDto(role.Id, role.Name, role.Description, permDtos));
+        }
+
+        return result;
+    }
+
+    public async Task<List<PermissionDto>> GetAllPermissionsAsync(CancellationToken cancellationToken = default)
+    {
+        var permissions = await _permissionRepository.GetAllAsync(cancellationToken);
+        return permissions.Select(p => new PermissionDto(p.Id, p.Code, p.Name, p.Module)).ToList();
+    }
+
+    public async Task<RoleDto> UpdateRolePermissionsAsync(Guid roleId, Guid adminUserId, UpdateRolePermissionsRequest request, CancellationToken cancellationToken = default)
+    {
+        var role = await _roleRepository.GetByIdAsync(roleId, cancellationToken);
+        if (role == null)
+        {
+            throw new EntityNotFoundException("Role", roleId);
+        }
+
+        await _roleRepository.UpdateRolePermissionsAsync(roleId, request.PermissionIds, cancellationToken);
+        _logger.LogInformation("Permissions for Role {RoleId} updated by Admin {AdminId}", roleId, adminUserId);
+        await _auditEventLogger.LogAsync("ROLE_PERMISSIONS_UPDATED", roleId, $"Role permissions updated by Admin ID: {adminUserId}", cancellationToken);
+
+        var updatedRole = await _roleRepository.GetByIdAsync(roleId, cancellationToken);
+        var allPermissions = await _permissionRepository.GetAllAsync(cancellationToken);
+        var permDict = allPermissions.ToDictionary(p => p.Id);
+
+        var permDtos = updatedRole!.RolePermissions
+            .Where(rp => permDict.ContainsKey(rp.PermissionId))
+            .Select(rp => permDict[rp.PermissionId])
+            .Select(p => new PermissionDto(p.Id, p.Code, p.Name, p.Module))
+            .ToList();
+
+        return new RoleDto(updatedRole.Id, updatedRole.Name, updatedRole.Description, permDtos);
     }
 
     public async Task<UserDto> ApproveUserAsync(Guid targetUserId, Guid adminUserId, CancellationToken cancellationToken = default)
