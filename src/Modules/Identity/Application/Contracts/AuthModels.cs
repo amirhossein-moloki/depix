@@ -38,6 +38,18 @@ public record CreateUserByAdminRequest(
     List<string>? RoleNames
 );
 
+public record UpdateUserByAdminRequest(
+    string FirstName,
+    string LastName,
+    string Email,
+    string? Phone,
+    string? Status
+);
+
+public record UpdateUserRolesRequest(
+    List<string> RoleNames
+);
+
 public record UserDto(
     Guid Id,
     string FirstName,
@@ -50,6 +62,24 @@ public record UserDto(
     Guid? ApprovedBy,
     DateTime? ApprovedAt,
     string? RejectionReason
+);
+
+public record RoleDto(
+    Guid Id,
+    string Name,
+    string? Description,
+    List<PermissionDto> Permissions
+);
+
+public record PermissionDto(
+    Guid Id,
+    string Code,
+    string Name,
+    string Module
+);
+
+public record UpdateRolePermissionsRequest(
+    List<Guid> PermissionIds
 );
 
 public record ApproveUserRequest(string? Reason);

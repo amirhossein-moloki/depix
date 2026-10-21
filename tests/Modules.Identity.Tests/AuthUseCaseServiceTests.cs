@@ -221,4 +221,76 @@ public class AuthUseCaseServiceTests
         await Assert.ThrowsAsync<ValidationException>(() =>
             _service.ResetUserPasswordByAdminAsync(Guid.NewGuid(), Guid.NewGuid(), new AdminResetPasswordRequest("")));
     }
+
+    [Fact]
+    public async Task RegisterPublicUserAsync_ValidRequest_ShouldCreateUserWithActiveStatus()
+    {
+        // Arrange
+        var request = new RegisterUserRequest("Alice", "Smith", "alice@example.com", "Password123!", "1234567890");
+        _userRepoMock.Setup(r => r.GetByEmailAsync(request.Email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((User?)null);
+        _hasherMock.Setup(h => h.HashPassword(request.Password)).Returns("hashed_pwd");
+        _roleRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Role> { Role.Create("User") });
+        _roleRepoMock.Setup(r => r.GetRolesByUserIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Role> { Role.Create("User") });
+
+        // Act
+        var result = await _service.RegisterPublicUserAsync(request);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Active", result.Status);
+        Assert.Equal("alice@example.com", result.Email);
+        _userRepoMock.Verify(r => r.AddAsync(It.Is<User>(u => u.Status == UserStatus.Active), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAllUsersAsync_ShouldReturnAllUsers()
+    {
+        // Arrange
+        var user1 = User.Create("User1", "Test", "user1@example.com", "pwd1");
+        var user2 = User.Create("User2", "Test", "user2@example.com", "pwd2");
+        _userRepoMock.Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<User> { user1, user2 });
+        _roleRepoMock.Setup(r => r.GetRolesByUserIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Role>());
+
+        // Act
+        var result = await _service.GetAllUsersAsync();
+
+        // Assert
+        Assert.Equal(2, result.Count);
+    }
+
+    [Fact]
+    public async Task DeleteUserByAdminAsync_SelfDeletion_ShouldThrowBusinessRuleException()
+    {
+        // Arrange
+        var adminId = Guid.NewGuid();
+
+        // Act & Assert
+        var ex = await Assert.ThrowsAsync<BusinessRuleException>(() =>
+            _service.DeleteUserByAdminAsync(adminId, adminId));
+
+        Assert.Contains("cannot delete their own account", ex.Message);
+    }
+
+    [Fact]
+    public async Task DeleteUserByAdminAsync_ValidTargetUser_ShouldDeleteUser()
+    {
+        // Arrange
+        var adminId = Guid.NewGuid();
+        var targetUser = User.Create("Bob", "Builder", "bob@example.com", "pwd");
+        _userRepoMock.Setup(r => r.GetByIdAsync(targetUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(targetUser);
+        _roleRepoMock.Setup(r => r.GetRolesByUserIdAsync(targetUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Role>());
+
+        // Act
+        await _service.DeleteUserByAdminAsync(targetUser.Id, adminId);
+
+        // Assert
+        _userRepoMock.Verify(r => r.DeleteAsync(targetUser, It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

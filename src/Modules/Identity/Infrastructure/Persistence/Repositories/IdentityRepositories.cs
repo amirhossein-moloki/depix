@@ -37,6 +37,14 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
             .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower(), cancellationToken);
     }
 
+    public async Task<List<User>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<User>()
+            .Include(u => u.UserRoles)
+            .OrderByDescending(u => u.CreatedAt)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<List<User>> GetPendingUsersAsync(CancellationToken cancellationToken = default)
     {
         return await _dbContext.Set<User>()
@@ -77,7 +85,26 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task DeleteAsync(User user, CancellationToken cancellationToken = default)
+    {
+        var userRoles = await _dbContext.Set<UserRole>().Where(ur => ur.UserId == user.Id).ToListAsync(cancellationToken);
+        _dbContext.Set<UserRole>().RemoveRange(userRoles);
+
+        var refreshTokens = await _dbContext.Set<RefreshToken>().Where(rt => rt.UserId == user.Id).ToListAsync(cancellationToken);
+        _dbContext.Set<RefreshToken>().RemoveRange(refreshTokens);
+
+        _dbContext.Set<User>().Remove(user);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     // IRoleRepository
+    public async Task<Role?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Set<Role>()
+            .Include(r => r.RolePermissions)
+            .FirstOrDefaultAsync(r => r.Name.ToLower() == name.ToLower(), cancellationToken);
+    }
+
     public async Task<List<Role>> GetRolesByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var userRoles = await _dbContext.Set<UserRole>()
@@ -86,18 +113,35 @@ public class IdentityRepositories : IUserRepository, IRoleRepository, IPermissio
             .ToListAsync(cancellationToken);
 
         return await _dbContext.Set<Role>()
+            .Include(r => r.RolePermissions)
             .Where(r => userRoles.Contains(r.Id))
             .ToListAsync(cancellationToken);
     }
 
     async Task<List<Role>> IRoleRepository.GetAllAsync(CancellationToken cancellationToken)
     {
-        return await _dbContext.Set<Role>().ToListAsync(cancellationToken);
+        return await _dbContext.Set<Role>()
+            .Include(r => r.RolePermissions)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task AddAsync(Role role, CancellationToken cancellationToken = default)
     {
         await _dbContext.Set<Role>().AddAsync(role, cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateRolePermissionsAsync(Guid roleId, IEnumerable<Guid> permissionIds, CancellationToken cancellationToken = default)
+    {
+        var existingPerms = await _dbContext.Set<RolePermission>()
+            .Where(rp => rp.RoleId == roleId)
+            .ToListAsync(cancellationToken);
+
+        _dbContext.Set<RolePermission>().RemoveRange(existingPerms);
+
+        var newPerms = permissionIds.Distinct().Select(pid => new RolePermission(roleId, pid));
+        await _dbContext.Set<RolePermission>().AddRangeAsync(newPerms, cancellationToken);
+
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
