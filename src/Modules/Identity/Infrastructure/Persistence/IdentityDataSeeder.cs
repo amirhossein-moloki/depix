@@ -146,7 +146,10 @@ public static class IdentityDataSeeder
         {
             ("Admin", "System Administrator Role", _ => true),
             ("User", "Standard System User Role", p =>
-                p.Code.EndsWith(".Read") ||
+                p.Code == "CRM.Lead.Read" || p.Code == "CRM.Activity.Read" || p.Code == "CRM.SalesNote.Read" || p.Code == "CRM.Contact.Read" ||
+                p.Code == "Customer.Read" || p.Code == "Sales.Proposal.Read" || p.Code == "Project.Read" ||
+                p.Code == "Support.Ticket.Read" || p.Code == "Support.Comment.Read" ||
+                p.Code == "Platform.Task.Read" || p.Code == "Platform.File.Read" || p.Code == "Reporting.Read" ||
                 p.Code == "CRM.Lead.Create" || p.Code == "CRM.Activity.Create" || p.Code == "CRM.SalesNote.Create" ||
                 p.Code == "Support.Ticket.Create" || p.Code == "Support.Comment.Create" ||
                 p.Code == "Platform.Task.Create" || p.Code == "Platform.Task.Update" || p.Code == "Platform.File.Create"),

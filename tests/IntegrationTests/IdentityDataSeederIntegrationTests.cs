@@ -189,6 +189,11 @@ public class IdentityDataSeederIntegrationTests
         Assert.Contains("CRM.Lead.Read", loginResult.Permissions);
         Assert.Contains("CRM.Lead.Create", loginResult.Permissions);
         Assert.Contains("Support.Ticket.Create", loginResult.Permissions);
+
+        // Verify least privilege: User role should NOT contain sensitive admin/finance/audit permissions
+        Assert.DoesNotContain("Platform.Audit.Read", loginResult.Permissions);
+        Assert.DoesNotContain("Platform.Setting.Read", loginResult.Permissions);
+        Assert.DoesNotContain("Finance.Invoice.Read", loginResult.Permissions);
     }
 
     [Fact]
