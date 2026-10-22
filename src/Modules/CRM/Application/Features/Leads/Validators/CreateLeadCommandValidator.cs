@@ -8,8 +8,16 @@ public class CreateLeadCommandValidator : AbstractValidator<CreateLeadCommand>
 {
     public CreateLeadCommandValidator()
     {
-        RuleFor(x => x.CompanyId)
-            .NotEmpty().WithMessage("Company ID is required.");
+        RuleFor(x => x)
+            .Must(x => (x.CompanyId.HasValue && x.CompanyId.Value != Guid.Empty) || x.Company != null)
+            .WithMessage("Either CompanyId or Company details must be provided.");
+
+        When(x => x.Company != null, () =>
+        {
+            RuleFor(x => x.Company!.Name)
+                .NotEmpty().WithMessage("Company name is required when specifying Company details.")
+                .MaximumLength(200).WithMessage("Company name cannot exceed 200 characters.");
+        });
 
         RuleFor(x => x.Title)
             .NotEmpty().WithMessage("Lead title is required.")

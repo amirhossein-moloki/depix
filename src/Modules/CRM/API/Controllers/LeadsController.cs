@@ -111,7 +111,9 @@ public class LeadsController : ControllerBase
             request.ContactId,
             request.AssignedTo,
             request.Score,
-            request.Status
+            request.Status,
+            request.Company,
+            request.Contact
         );
 
         var validationResult = await _createValidator.ValidateAsync(command, cancellationToken);

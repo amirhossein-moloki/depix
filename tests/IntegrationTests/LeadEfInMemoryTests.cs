@@ -23,9 +23,11 @@ public class LeadEfInMemoryTests
         await using var dbContext = new ApplicationDbContext(options);
         var repository = new LeadRepository(dbContext);
 
-        var companyId = Guid.NewGuid();
+        var company = Company.Create("Test Company", "IT", "https://example.com", "123456", "info@example.com", new Modules.CRM.Domain.ValueObjects.Address("Test Address"));
+        await dbContext.Set<Company>().AddAsync(company);
+
         var lead = Lead.Create(
-            companyId,
+            company.Id,
             "Custom Website Development",
             "Inbound Form",
             "e-commerce portal with payment gateway",
@@ -84,11 +86,13 @@ public class LeadEfInMemoryTests
         await using var dbContext = new ApplicationDbContext(options);
         var repository = new LeadRepository(dbContext);
 
-        var companyId = Guid.NewGuid();
-        var l1 = Lead.Create(companyId, "Alpha Portal", "Web", estimatedValue: 10000m);
-        var l2 = Lead.Create(companyId, "Beta Mobile App", "Referral", estimatedValue: 20000m);
+        var company = Company.Create("Test Company", "IT", "https://example.com", "123456", "info@example.com", new Modules.CRM.Domain.ValueObjects.Address("Test Address"));
+        await dbContext.Set<Company>().AddAsync(company);
+
+        var l1 = Lead.Create(company.Id, "Alpha Portal", "Web", estimatedValue: 10000m);
+        var l2 = Lead.Create(company.Id, "Beta Mobile App", "Referral", estimatedValue: 20000m);
         l2.Qualify(); // QUALIFIED
-        var l3 = Lead.Create(companyId, "Alpha Redesign", "Web", estimatedValue: 15000m);
+        var l3 = Lead.Create(company.Id, "Alpha Redesign", "Web", estimatedValue: 15000m);
 
         await repository.AddAsync(l1);
         await repository.AddAsync(l2);
@@ -110,7 +114,7 @@ public class LeadEfInMemoryTests
 
         // Act & Assert: CountAsync
         var count = await repository.CountAsync(
-            search: null, status: null, companyId: companyId, assignedTo: null, source: null,
+            search: null, status: null, companyId: company.Id, assignedTo: null, source: null,
             fromDate: null, toDate: null);
         Assert.Equal(3, count);
     }

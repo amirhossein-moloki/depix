@@ -16,6 +16,8 @@ public class LeadRepository : ILeadRepository
     public async Task<Lead?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _dbContext.Set<Lead>()
+            .Include(l => l.Company)
+            .Include(l => l.Contact)
             .Include(l => l.Research)
             .Include(l => l.Activities)
             .Include(l => l.SalesNotes)
@@ -36,7 +38,18 @@ public class LeadRepository : ILeadRepository
         bool sortDescending,
         CancellationToken cancellationToken = default)
     {
-        var query = ApplyFilters(_dbContext.Set<Lead>().AsNoTracking(), search, status, companyId, assignedTo, source, fromDate, toDate);
+        var query = ApplyFilters(
+            _dbContext.Set<Lead>()
+                .AsNoTracking()
+                .Include(l => l.Company)
+                .Include(l => l.Contact),
+            search,
+            status,
+            companyId,
+            assignedTo,
+            source,
+            fromDate,
+            toDate);
 
         query = ApplySorting(query, sortBy, sortDescending);
 

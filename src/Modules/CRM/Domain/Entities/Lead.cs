@@ -25,6 +25,8 @@ public class Lead : AuditableAggregateRoot, ISoftDelete
     public DateTime? DeletedAt { get; private set; }
     public Guid? DeletedBy { get; private set; }
 
+    public Company? Company { get; private set; }
+    public Contact? Contact { get; private set; }
     public LeadResearch? Research { get; private set; }
     public IReadOnlyCollection<Activity> Activities => _activities.AsReadOnly();
     public IReadOnlyCollection<SalesNote> SalesNotes => _salesNotes.AsReadOnly();

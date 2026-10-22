@@ -1,3 +1,5 @@
+using Modules.CRM.Application.Features.Companies.DTOs;
+using Modules.CRM.Application.Features.Contacts.Mappings;
 using Modules.CRM.Application.Features.Leads.DTOs;
 using Modules.CRM.Domain.Entities;
 
@@ -22,7 +24,9 @@ public static class LeadMappingExtensions
             lead.CreatedAt,
             lead.UpdatedAt,
             lead.IsDeleted,
-            lead.DeletedAt
+            lead.DeletedAt,
+            lead.Company != null ? lead.Company.ToDto() : null,
+            lead.Contact != null ? lead.Contact.ToDto() : null
         );
     }
 
@@ -38,7 +42,9 @@ public static class LeadMappingExtensions
             lead.Score,
             lead.EstimatedValue,
             lead.AssignedTo,
-            lead.CreatedAt
+            lead.CreatedAt,
+            lead.Company != null ? lead.Company.ToDto() : null,
+            lead.Contact != null ? lead.Contact.ToDto() : null
         );
     }
 }
