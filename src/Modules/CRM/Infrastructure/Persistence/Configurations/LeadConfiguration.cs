@@ -25,6 +25,16 @@ public class LeadConfiguration : IEntityTypeConfiguration<Lead>
         builder.HasIndex(l => l.AssignedTo);
         builder.HasIndex(l => l.CreatedAt);
 
+        builder.HasOne(l => l.Company)
+            .WithMany(c => c.Leads)
+            .HasForeignKey(l => l.CompanyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(l => l.Contact)
+            .WithMany()
+            .HasForeignKey(l => l.ContactId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasOne(l => l.Research)
             .WithOne()
             .HasForeignKey<LeadResearch>(lr => lr.LeadId)

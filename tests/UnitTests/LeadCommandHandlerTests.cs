@@ -43,6 +43,33 @@ public class LeadCommandHandlerTests
     }
 
     [Fact]
+    public async Task CreateLeadHandler_WithCompositeDetails_ShouldCreateCompanyContactAndLead()
+    {
+        // Arrange
+        var handler = new CreateLeadCommandHandler(_leadRepository, _companyRepository, _contactRepository, _unitOfWork);
+        var command = new CreateLeadCommand(
+            CompanyId: null,
+            Title: "Composite App",
+            Source: "Inbound",
+            Description: "New lead with company and contact",
+            EstimatedValue: 50000m,
+            Company: new Modules.CRM.Application.Features.Leads.DTOs.CompositeCompanyDetails("New Composite Corp", "Tech", "https://composite.com", "123456789", "contact@composite.com", "123 Main St"),
+            Contact: new Modules.CRM.Application.Features.Leads.DTOs.CompositeContactDetails("John", "Doe", "john@composite.com", "987654321", "CEO", "Decision Maker", true, "High")
+        );
+
+        // Act
+        var result = await handler.HandleAsync(command);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Composite App", result.Title);
+        await _companyRepository.Received(1).AddAsync(Arg.Any<Company>(), Arg.Any<CancellationToken>());
+        await _contactRepository.Received(1).AddAsync(Arg.Any<Contact>(), Arg.Any<CancellationToken>());
+        await _leadRepository.Received(1).AddAsync(Arg.Any<Lead>(), Arg.Any<CancellationToken>());
+        await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task CreateLeadHandler_WithMissingCompany_ShouldThrowEntityNotFoundException()
     {
         // Arrange
