@@ -80,6 +80,60 @@ public class IdentityDataSeederIntegrationTests
     }
 
     [Fact]
+    public async Task SeedPermissionsAndRolesAsync_ShouldNotOverwriteAdministratorCustomizationsOnRestart()
+    {
+        // Arrange
+        var dbName = Guid.NewGuid().ToString();
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: dbName)
+            .Options;
+
+        await using (var dbContext = new ApplicationDbContext(options))
+        {
+            // Initial Seed
+            await IdentityDataSeeder.SeedPermissionsAndRolesAsync(dbContext);
+        }
+
+        // Simulate Administrator Customization: Admin removes a permission from "user" role
+        await using (var dbContext = new ApplicationDbContext(options))
+        {
+            var userRole = await dbContext.Set<Role>()
+                .Include(r => r.RolePermissions)
+                .FirstAsync(r => r.Name.ToLower() == "user");
+
+            var permToRemove = await dbContext.Set<Permission>()
+                .FirstAsync(p => p.Code == "CRM.Lead.Create");
+
+            var rolePerm = userRole.RolePermissions.FirstOrDefault(rp => rp.PermissionId == permToRemove.Id);
+            if (rolePerm != null)
+            {
+                userRole.RemovePermission(permToRemove.Id);
+                dbContext.Set<RolePermission>().Remove(rolePerm);
+                await dbContext.SaveChangesAsync();
+            }
+        }
+
+        // Act - Re-run seeder (Simulating Application Restart)
+        await using (var dbContext = new ApplicationDbContext(options))
+        {
+            await IdentityDataSeeder.SeedPermissionsAndRolesAsync(dbContext);
+        }
+
+        // Assert - The removed permission should NOT be restored automatically
+        await using (var dbContext = new ApplicationDbContext(options))
+        {
+            var userRole = await dbContext.Set<Role>()
+                .Include(r => r.RolePermissions)
+                .FirstAsync(r => r.Name.ToLower() == "user");
+
+            var permRemoved = await dbContext.Set<Permission>()
+                .FirstAsync(p => p.Code == "CRM.Lead.Create");
+
+            Assert.DoesNotContain(userRole.RolePermissions, rp => rp.PermissionId == permRemoved.Id);
+        }
+    }
+
+    [Fact]
     public async Task StandardUserLogin_AfterSeeding_ShouldReceiveAssignedRolePermissions()
     {
         // Arrange
@@ -135,6 +189,11 @@ public class IdentityDataSeederIntegrationTests
         Assert.Contains("CRM.Lead.Read", loginResult.Permissions);
         Assert.Contains("CRM.Lead.Create", loginResult.Permissions);
         Assert.Contains("Support.Ticket.Create", loginResult.Permissions);
+
+        // Verify least privilege: User role should NOT contain sensitive admin/finance/audit permissions
+        Assert.DoesNotContain("Platform.Audit.Read", loginResult.Permissions);
+        Assert.DoesNotContain("Platform.Setting.Read", loginResult.Permissions);
+        Assert.DoesNotContain("Finance.Invoice.Read", loginResult.Permissions);
     }
 
     [Fact]

@@ -146,7 +146,10 @@ public static class IdentityDataSeeder
         {
             ("Admin", "System Administrator Role", _ => true),
             ("User", "Standard System User Role", p =>
-                p.Code.EndsWith(".Read") ||
+                p.Code == "CRM.Lead.Read" || p.Code == "CRM.Activity.Read" || p.Code == "CRM.SalesNote.Read" || p.Code == "CRM.Contact.Read" ||
+                p.Code == "Customer.Read" || p.Code == "Sales.Proposal.Read" || p.Code == "Project.Read" ||
+                p.Code == "Support.Ticket.Read" || p.Code == "Support.Comment.Read" ||
+                p.Code == "Platform.Task.Read" || p.Code == "Platform.File.Read" || p.Code == "Reporting.Read" ||
                 p.Code == "CRM.Lead.Create" || p.Code == "CRM.Activity.Create" || p.Code == "CRM.SalesNote.Create" ||
                 p.Code == "Support.Ticket.Create" || p.Code == "Support.Comment.Create" ||
                 p.Code == "Platform.Task.Create" || p.Code == "Platform.Task.Update" || p.Code == "Platform.File.Create"),
@@ -201,6 +204,7 @@ public static class IdentityDataSeeder
 
         var existingRoles = await dbContext.Set<Role>().ToListAsync(cancellationToken);
         var rolesMap = existingRoles.ToDictionary(r => r.Name, StringComparer.OrdinalIgnoreCase);
+        var newlyCreatedRoleIds = new HashSet<Guid>();
         bool rolesCreated = false;
 
         foreach (var def in defaultRoles)
@@ -210,6 +214,7 @@ public static class IdentityDataSeeder
                 roleEntity = Role.Create(def.Name, def.Description);
                 await dbContext.Set<Role>().AddAsync(roleEntity, cancellationToken);
                 rolesMap[def.Name] = roleEntity;
+                newlyCreatedRoleIds.Add(roleEntity.Id);
                 rolesCreated = true;
             }
         }
@@ -228,14 +233,24 @@ public static class IdentityDataSeeder
         {
             if (rolesMap.TryGetValue(def.Name, out var roleEntity))
             {
-                var targetPerms = permissionsMap.Values.Where(def.PermFilter).ToList();
-                foreach (var perm in targetPerms)
+                // To preserve administrator customizations, default permissions are only attached
+                // when a role is newly created during initial database setup or when adding a new system role.
+                // For existing roles already in the database, we leave their permission configuration intact
+                // so administrator additions or removals persist across restarts.
+                bool isNewlyCreatedRole = newlyCreatedRoleIds.Contains(roleEntity.Id);
+                bool isRoleWithoutPermissions = !allRolePermissions.Any(rp => rp.RoleId == roleEntity.Id);
+
+                if (isNewlyCreatedRole || isRoleWithoutPermissions)
                 {
-                    if (!rolePermSet.Contains((roleEntity.Id, perm.Id)))
+                    var targetPerms = permissionsMap.Values.Where(def.PermFilter).ToList();
+                    foreach (var perm in targetPerms)
                     {
-                        await dbContext.Set<RolePermission>().AddAsync(new RolePermission(roleEntity.Id, perm.Id), cancellationToken);
-                        rolePermSet.Add((roleEntity.Id, perm.Id));
-                        rolePermsChanged = true;
+                        if (!rolePermSet.Contains((roleEntity.Id, perm.Id)))
+                        {
+                            await dbContext.Set<RolePermission>().AddAsync(new RolePermission(roleEntity.Id, perm.Id), cancellationToken);
+                            rolePermSet.Add((roleEntity.Id, perm.Id));
+                            rolePermsChanged = true;
+                        }
                     }
                 }
             }
@@ -244,7 +259,7 @@ public static class IdentityDataSeeder
         if (rolePermsChanged)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
-            logger?.LogInformation("Attached permissions to system roles successfully.");
+            logger?.LogInformation("Attached permissions to newly created system roles successfully.");
         }
     }
 }
